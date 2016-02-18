@@ -1,0 +1,18 @@
+language: python
+python: 2.7
+virtualenv:
+  system_site_packages: true
+before_install:
+- sudo mv /etc/apt/sources.list.d/pgdg-source.list* /tmp
+- sudo apt-get remove -y libgdal1
+- sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+- sudo apt-get update -y
+- sudo apt-get install -y python-dev gdal-bin python-gdal
+install:
+- pip install nose
+- pip install flake8
+- pip install coveralls
+script:
+- flake8 --max-line-length=90 --ignore=E128,E221,E241,E251,E272,E711,E731,W503 quantized_mesh_tile tests
+- coverage run --source=quantized_mesh_tile setup.py test
+after_success: coveralls
