@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# HACK for `nose.collector` to work on python 2.7.3 and earlier
+import multiprocessing
 from setuptools import setup, find_packages
 
 setup(name='quantized-mesh-tile',
@@ -12,5 +14,5 @@ setup(name='quantized-mesh-tile',
       packages=find_packages(exclude=['tests']),
       zip_safe=False,
       test_suite='nose.collector',
-      install_requires=['shapely', 'numpy', 'pyproj'],
+      install_requires=['shapely', 'numpy'],
       )

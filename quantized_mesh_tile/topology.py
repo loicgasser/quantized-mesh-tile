@@ -2,7 +2,6 @@
 
 import math
 import numpy as np
-from osgeo import ogr
 from llh_ecef import LLH2ECEF
 from utils import computeNormals
 
@@ -22,7 +21,7 @@ class TerrainTopology(object):
         self.faces = []
         self.verticesLookup = {}
 
-    def __str__(self):
+    def __repr__(self):
         msg = 'Min height:'
         msg += '\n%s' % self.minHeight
         msg += '\nMax height:'
@@ -78,25 +77,6 @@ class TerrainTopology(object):
         self.faces.append(face)
 
     """
-    Builds a terrain topology from a list of GDAL features.
-    """
-
-    def fromGDALFeatures(self):
-        for feature in self.features:
-            if not isinstance(feature, ogr.Feature):
-                raise TypeError('Only GDAL features are supported')
-
-            geometry = feature.GetGeometryRef()
-            dim = geometry.GetCoordinateDimension()
-            if dim != 3:
-                raise TypeError('A feature with a dimension of %s has been found.' % dim)
-
-            vertices = self._verticesFromGDALGeometry(geometry)
-            self.addVertices(vertices)
-        self.create()
-        self.features = []
-
-    """
     Once all the vertices have been added, create numpy arrays
     """
 
@@ -117,18 +97,6 @@ class TerrainTopology(object):
     def _lookupVertexIndex(self, lookupKey):
         if lookupKey in self.verticesLookup:
             return self.verticesLookup[lookupKey]
-
-    """
-    We expect a ring GDAL geometry and return a list of vertices.
-    """
-
-    def _verticesFromGDALGeometry(self, geometry):
-        # 0 refers to the ring
-        ring = geometry.GetGeometryRef(0)
-        points = ring.GetPoints()
-        # Remove last point of the polygon and keep only 3 coordinates
-        vertices = points[0: len(points) - 1]
-        return vertices
 
     """
     Inspired by:

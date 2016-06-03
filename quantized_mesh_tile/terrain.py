@@ -2,12 +2,10 @@
 
 import os
 import cStringIO
-import osgeo.ogr as ogr
-import osgeo.osr as osr
 from collections import OrderedDict
 import horizon_occlusion_point as occ
 from utils import (
-    octEncode, octDecode, zigZagDecode, zigZagEncode, transformCoordinate,
+    octEncode, octDecode, zigZagDecode, zigZagEncode,
     unpackEntry, unpackIndices, decodeIndices, packEntry, packIndices, encodeIndices
 )
 from bbsphere import BoundingSphere
@@ -190,27 +188,10 @@ class TerrainTile:
                     )
                 )
 
-        if epsg != 4326:
-            self._reprojectVerticesCoordinates(epsg)
-
     def _resetReprojectedVerticesCoordinates(self):
         self._easts = []
         self._norths = []
         self._alts = []
-
-    def _reprojectVerticesCoordinates(self, epsg):
-        if self.targetEPSG != epsg:
-            self._resetReprojectedVerticesCoordinates()
-        if len(self._easts) == 0:
-            self.targetEPSG = epsg
-            for i, lon in enumerate(self._longs):
-                lat = self._lats[i]
-                height = self._heights[i]
-                point = 'POINT (%f %f %f)' % (lon, lat, height)
-                p = transformCoordinate(point, 4326, epsg)
-                self._easts.append(p.GetX())
-                self._norths.append(p.GetY())
-                self._alts.append(p.GetZ())
 
     def fromFile(self, filePath, west, east, south, north,
             hasLighting=False, hasWatermask=False):
@@ -428,43 +409,6 @@ class TerrainTile:
                 if self.watermask[0][0] is None:
                     self.watermask[0][0] = 0
                 f.write(packEntry(TerrainTile.WaterMask['xy'], int(self.watermask[0][0])))
-
-    def toShapefile(self, filePath, epsg=4326):
-        if not filePath.endswith('.shp'):
-            raise Exception('Wrong file extension')
-
-        if os.path.isfile(filePath):
-            raise IOError('File %s already exists' % filePath)
-
-        if len(self.indices) == 0:
-            raise Exception('No indices, you must first generate the topology')
-
-        coords = self.getVerticesCoordinates(epsg=epsg)
-
-        baseName = os.path.split(filePath)[1]
-        drv = ogr.GetDriverByName('ESRI Shapefile')
-        dataSource = drv.CreateDataSource(filePath)
-        srs = osr.SpatialReference()
-        srs.ImportFromEPSG(epsg)
-        layer = dataSource.CreateLayer(baseName, srs, ogr.wkbPolygon25D)
-        for i in xrange(0, len(self.indices), 3):
-            # Indices of triangle a,b,c
-            a = self.indices[i]
-            b = self.indices[i + 1]
-            c = self.indices[i + 2]
-            ring = ogr.Geometry(ogr.wkbLinearRing)
-            ring.AddPoint(coords[a][0], coords[a][1], coords[a][2])
-            ring.AddPoint(coords[b][0], coords[b][1], coords[b][2])
-            ring.AddPoint(coords[c][0], coords[c][1], coords[c][2])
-            ring.AddPoint(coords[a][0], coords[a][1], coords[a][2])
-            polygon = ogr.Geometry(ogr.wkbPolygon)
-            polygon.AddGeometry(ring)
-
-            feature = ogr.Feature(layer.GetLayerDefn())
-            feature.SetGeometry(polygon)
-            layer.CreateFeature(feature)
-            feature.Destroy()
-        dataSource.Destroy()
 
     def fromTerrainTopology(self, topology, bounds=None):
         if not isinstance(topology, TerrainTopology):
