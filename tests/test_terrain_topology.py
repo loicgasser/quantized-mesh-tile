@@ -46,6 +46,10 @@ class TestTopology(unittest.TestCase):
         topologyWKB = TerrainTopology()
         topologyWKB.addGeometries([wkb_1])
 
+        self.assertIsInstance(topology.__repr__(), str)
+        self.assertIsInstance(topology.__repr__(), str)
+        self.assertIsInstance(topology.__repr__(), str)
+
         self.assertEqual(len(topology.vertices), 3)
         self.assertEqual(len(topology.faces), 1)
 
@@ -131,7 +135,8 @@ class TestTopology(unittest.TestCase):
         self.assertEqual(topology.maxHeight, 4.5)
 
     def testTopologyBadGeoms(self):
-        wkt = 'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.5 1.2 1.1, 2.1 3.1 3.3))'
+        wkt = 'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.5 1.2 1.1,' \
+              ' 2.1 3.1 3.3))'
         with self.assertRaises(ValueError):
             TerrainTopology(geometries=[wkt])
         wkt = 'POLYGON ((2.1 3.1, 1.2 1.5, 3.2 2.2, 2.1 3.1))'

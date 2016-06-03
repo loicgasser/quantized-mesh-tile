@@ -33,9 +33,11 @@ class TestTerrainTile(unittest.TestCase):
         ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y),
             minx, miny, maxx, maxy)
         ter.toFile(self.tmpfile)
+        self.assertIsInstance(ter.__repr__(), str)
 
         ter2 = TerrainTile()
         ter2.fromFile(self.tmpfile, minx, miny, maxx, maxy)
+        self.assertIsInstance(ter2.__repr__(), str)
 
         # check headers
         self.assertGreater(len(ter.header), 0)
