@@ -15,7 +15,7 @@ from shapely.wkb import loads as load_wkb
 from shapely.wkt import loads as load_wkt
 
 
-class TerrainTopology(object):
+class TerrainTopology:
     """
     This class is used to build the terrain tile topology.
 

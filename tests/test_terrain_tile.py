@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import unittest
 import os
+import unittest
+import cStringIO
 from quantized_mesh_tile.terrain import TerrainTile
+from quantized_mesh_tile.topology import TerrainTopology
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
 
@@ -29,14 +31,13 @@ class TestTerrainTile(unittest.TestCase):
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
-        ter = TerrainTile()
-        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y),
-            minx, miny, maxx, maxy)
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y))
         ter.toFile(self.tmpfile)
         self.assertIsInstance(ter.__repr__(), str)
 
-        ter2 = TerrainTile()
-        ter2.fromFile(self.tmpfile, minx, miny, maxx, maxy)
+        ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter2.fromFile(self.tmpfile)
         self.assertIsInstance(ter2.__repr__(), str)
 
         # check headers
@@ -92,11 +93,11 @@ class TestTerrainTile(unittest.TestCase):
         x = 769
         y = 319
         geodetic = GlobalGeodetic(True)
-
-        ter = TerrainTile()
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile('tests/data/%s_%s_%s_watermask.terrain' % (z, x, y),
-            minx, miny, maxx, maxy, hasWatermask=True)
+            hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), 256)
         for row in ter.watermask:
@@ -107,8 +108,8 @@ class TestTerrainTile(unittest.TestCase):
 
         ter.toFile(self.tmpfile)
 
-        ter2 = TerrainTile()
-        ter2.fromFile(self.tmpfile, minx, miny, maxx, maxy, hasWatermask=True)
+        ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter2.fromFile(self.tmpfile, hasWatermask=True)
 
         self.assertEqual(len(ter2.watermask), 256)
 
@@ -121,12 +122,13 @@ class TestTerrainTile(unittest.TestCase):
         x = 1563
         y = 590
         geodetic = GlobalGeodetic(True)
+        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
         ter = TerrainTile()
-        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile(
             'tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y),
-            minx, miny, maxx, maxy, hasLighting=True, hasWatermask=True
+            hasLighting=True, hasWatermask=True
         )
 
         # check indices
@@ -145,9 +147,9 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(ter.watermask[0][0], 255)
         ter.toFile(self.tmpfile)
 
-        ter2 = TerrainTile()
+        ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter2.fromFile(self.tmpfile,
-            minx, miny, maxx, maxy, hasLighting=True, hasWatermask=True)
+            hasLighting=True, hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), len(ter2.watermask))
         self.assertEqual(len(ter.watermask[0]), len(ter2.watermask[0]))
@@ -159,3 +161,20 @@ class TestTerrainTile(unittest.TestCase):
                 # oct encoding and decoding
                 # Thus we only check the sign
                 self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
+
+    def testTileCreationFromTopology(self):
+        wkts = [
+            'POLYGON Z ((0.0 0.0 1.0, 0.0 1.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))',
+            'POLYGON Z ((0.0 0.0 1.0, 1.0 0.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))'
+        ]
+        topology = TerrainTopology(geometries=wkts)
+        tile = TerrainTile(topology=topology)
+
+        # Check that the bounds are extracted from the terrain topology
+        self.assertEqual(tile._west, 0.0)
+        self.assertEqual(tile._south, 0.0)
+        self.assertEqual(tile._east, 1.0)
+        self.assertEqual(tile._north, 1.0)
+
+        fileLike = tile.toStringIO()
+        self.assertIsInstance(fileLike, cStringIO.OutputType)

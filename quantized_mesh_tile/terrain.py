@@ -57,6 +57,26 @@ class TerrainTile:
 
         A watermask matrix (Optional). Default is ``[]``.
 
+    Usage examples:
+
+        # Read a terrain tile (unzipped)
+        x = 533
+        y = 383
+        z = 9
+        geodetic = GlobalGeodetic(True)
+        [west, south, east, north] = geodetic.TileBounds(x, y, z)
+        tile = TerrainTile(west=west, south=south, east=east, north=north)
+        tile.fromFile('mytile.terrain')
+
+        # Write a terrain tile locally from scratch
+        wkts = [
+            'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.1 3.1 3.3))',
+            'POLYGON Z ((1.2 1.5 4.2, 2.2 1.1 1.1, 2.1 2.2 3.3, 1.2 1.5 4.2))'
+        ]
+        topology = TerrainTopology(geometries=wkts)
+        tile = TerrainTile(topology=topology)
+        tile.toFile('mytile.terrain')
+
     """
     quantizedMeshHeader = OrderedDict([
         ['centerX', 'd'],  # 8bytes
@@ -225,8 +245,7 @@ class TerrainTile:
                     )
                 )
 
-    def fromFile(self, filePath, west, east, south, north,
-            hasLighting=False, hasWatermask=False):
+    def fromFile(self, filePath, hasLighting=False, hasWatermask=False):
         """
         A method to read a terrain tile file. It is assumed that the tile unzipped.
 
@@ -234,23 +253,7 @@ class TerrainTile:
 
         ``filePath``
 
-`               An absolute or relative path to a quantized-mesh terrain tile. (Required)
-
-        ``west``
-
-            The longitude at the western edge of the tile. (Required)
-
-        ``east``
-
-            The longitude at the eastern edge of the tile. (Required)
-
-        ``south``
-
-            The latitude at the southern edge of the tile. (Required)
-
-        ``north``
-
-            The latitude at the northern edge of the tile. (Required)
+            An absolute or relative path to a quantized-mesh terrain tile. (Required)
 
         ``hasLighting``
 
@@ -261,7 +264,6 @@ class TerrainTile:
             Indicate if the tile contains watermask information. Default is ``True``.
 
         """
-        self.__init__(west=west, east=east, south=south, north=north)
         self.hasLighting = hasLighting
         self.hasWatermask = hasWatermask
         with open(filePath, 'rb') as f:
@@ -519,7 +521,7 @@ class TerrainTile:
             self._south = bounds[1]
             self._north = bounds[3]
         elif len(set([self._west, self._south, self._east, self._north]).difference(
-                set([-1.0, -1.0, 1.0, 1.0]))) == 0:
+                set([-1.0, -1.0, 1.0, 1.0]))) != 0:
             # Bounds already defined earlier
             pass
         else:
