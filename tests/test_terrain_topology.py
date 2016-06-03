@@ -129,3 +129,24 @@ class TestTopology(unittest.TestCase):
         self.assertEqual(topology.maxLon, 3.2)
         self.assertEqual(topology.maxLat, 3.1)
         self.assertEqual(topology.maxHeight, 4.5)
+
+    def testTopologyBadGeoms(self):
+        wkt = 'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.5 1.2 1.1, 2.1 3.1 3.3))'
+        with self.assertRaises(ValueError):
+            TerrainTopology(geometries=[wkt])
+        wkt = 'POLYGON ((2.1 3.1, 1.2 1.5, 3.2 2.2, 2.1 3.1))'
+        with self.assertRaises(ValueError):
+            TerrainTopology(geometries=[wkt])
+        wkb = b'\x01\x03\x00\x00\x00\x01\x00\x00\x00\x04\x00\x00\x00\xcd\xcc' \
+              b'\xcc\xcc\xcc\xcc\x00@\xcd\xcc\xcc\xcc\xcc\xcc\x08@333333\xf3?' \
+              b'\x00\x00\x00\x00\x00\x00\xf8?\x9a\x99\x99\x99\x99\x99\t@\x9a' \
+              b'\x99\x99\x99\x99\x99\x01@\xcd\xcc\xcc\xcc\xcc\xcc\x00@\xcd\xcc' \
+              b'\xcc\xcc\xcc\xcc\x08@'
+        with self.assertRaises(ValueError):
+            TerrainTopology(geometries=[wkb])
+        wkt = 'POINT (2.1 2.2)'
+        with self.assertRaises(ValueError):
+            TerrainTopology(geometries=[wkt])
+        wktWrong = 'POLYGON Z ((2.1, 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2, 4.5, 2.1 3.1 3.3))'
+        with self.assertRaises(ValueError):
+            TerrainTopology(geometries=[wktWrong])
