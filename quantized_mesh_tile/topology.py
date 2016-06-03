@@ -1,25 +1,57 @@
-# -*- coding: utf-8 -*-
+""" This module defines the :class:`quantized_mesh_tile.topology.TerrainTopology`.
+
+Reference
+---------
+"""
+
 
 import math
 import numpy as np
 from llh_ecef import LLH2ECEF
 from utils import computeNormals
+from shapely.geometry.base import BaseGeometry
+from shapely.geometry.polygon import Polygon
+from shapely.wkb import loads as load_wkb
+from shapely.wkt import loads as load_wkt
 
 
 class TerrainTopology(object):
+    """
+    This class is used to build the terrain tile topology.
 
-    def __init__(self, features=[], hasLighting=False):
+    Contructor arguments:
 
-        if not isinstance(features, list):
-            raise TypeError('Please provide a list of GDAL features')
+    ``geometries``
 
-        self.features = features
+        A list of shapely polygon geometries representing 3 dimensional triangles.
+        or
+        A list of WKT or WKB Polygons representing 3 dimensional triangles.
+        or
+        A list of triplet of vertices using the following structure:
+        ``(((lon0/lat0/height0),(...),(lon2,lat2,height2)),(...))``
+
+        Default is ``[]``.
+
+    ``hasLighting``
+
+        Indicate whether unit vectors should be computed for the lighting extension.
+
+        Default is ``False``.
+
+    """
+
+    def __init__(self, geometries=[], hasLighting=False):
+
+        self.geometries = geometries
         self.hasLighting = hasLighting
 
         self.vertices = []
         self.cartesianVertices = []
         self.faces = []
         self.verticesLookup = {}
+
+        if len(self.geometries) > 0:
+            self.addGeometries(self.geometries)
 
     def __repr__(self):
         msg = 'Min height:'
@@ -45,11 +77,85 @@ class TerrainTopology(object):
         msg += '\nNumber of triangles: %s' % (len(self.indexData) / 3)
         return msg
 
-    """
-    The vertices represent the coordinates of a triangle in 3d. [lon/lat/height]
-    """
+    def addGeometries(self, geometries):
+        """
+        Method to add geometries to the terrain tile topology.
 
-    def addVertices(self, vertices):
+        Arguments:
+
+        ``geometries``
+
+            A list of shapely polygon geometries representing 3 dimensional triangles.
+            or
+            A list of WKT or WKB Polygons representing 3 dimensional triangles.
+            or
+            A list of triplet of vertices using the following structure:
+            ``(((lon0/lat0/height0),(...),(lon2,lat2,height2)),(...))``
+        """
+        if isinstance(geometries, (list, tuple)) and len(geometries) > 0:
+            isVerticesList = self._isVerticesList(geometries)
+            for geometry in geometries:
+                if not isVerticesList:
+                    if not isinstance(geometry, BaseGeometry):
+                        geometry = self._loadGeometry(geometry)
+                    vertices = self._extractVertices(geometry)
+                else:
+                    vertices = geometry
+                self._addVertices(vertices)
+            self._create()
+
+    def _extractVertices(self, geometry):
+        """
+        Method to extract the triangle vertices from a Shapely geometry.
+        ``((lon0/lat0/height0),(...),(lon2,lat2,height2))``
+
+        You should normally never use this method directly.
+        """
+        if not geometry.has_z:
+            raise ValueError('Missing z dimension.')
+        if not isinstance(geometry, Polygon):
+            raise ValueError('Only polygons are accepted.')
+        vertices = list(geometry.exterior.coords)
+        if len(vertices) != 4:
+            raise ValueError('None triangular shape has beeen found.')
+        return vertices[:3]
+
+    def _isVerticesList(self, geometries):
+        """
+        Method to determine if the geometries provided are in the form of
+        a list of vertices.
+
+        You should normally never use this method directly.
+        """
+        geom = geometries[0]
+        if len(geom) == 3:
+            coords = geom[0]
+            if len(coords) == 3:
+                return True
+        else:
+            return False
+
+    def _loadGeometry(self, geometrySpec):
+        """
+        A private method to convert a (E)WKB or (E)WKT to a Shapely geometry.
+        """
+        try:
+            geometry = load_wkb(geometrySpec)
+        except:
+            try:
+                geometry = load_wkt(geometrySpec)
+            except:
+                geometry = None
+
+        if geometry is None:
+            raise ValueError('Failed to convert WKT or WKB to a Shapely geometry')
+
+        return geometry
+
+    def _addVertices(self, vertices):
+        """
+        A private method to add vertices to the terrain tile topology.
+        """
         vertices = self._assureCounterClockWise(vertices)
         face = []
         for vertex in vertices:
@@ -76,11 +182,10 @@ class TerrainTopology(object):
         # if len(face) == 3:
         self.faces.append(face)
 
-    """
-    Once all the vertices have been added, create numpy arrays
-    """
-
-    def create(self):
+    def _create(self):
+        """
+        A private method to create the final terrain data structure.
+        """
         self.vertices = np.array(self.vertices, dtype='float')
         self.cartesianVertices = np.array(self.cartesianVertices, dtype='float')
         self.faces = np.array(self.faces, dtype='int')
@@ -89,26 +194,21 @@ class TerrainTopology(object):
                 self.cartesianVertices, self.faces)
         self.verticesLookup = {}
 
-    """
-    Check if the vertex has already been discovered
-    and return its index (or None if not found)
-    """
-
     def _lookupVertexIndex(self, lookupKey):
+        """
+        A private method to determine if the vertex has already been discovered
+        and return its index (or None if not found).
+        """
         if lookupKey in self.verticesLookup:
             return self.verticesLookup[lookupKey]
 
-    """
-    Inspired by:
-    http://stackoverflow.com/questions/1709283/
-        how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
-    Helper function to make sure vertices unwind in counterwise order
-    """
-
     def _assureCounterClockWise(self, vertices):
-        if len(vertices) != 3:
-            raise TypeError('A ring must have exactly 3 coordinates.')
-
+        """
+        Private method to make sure vertices unwind in counterwise order.
+        Inspired by:
+        http://stackoverflow.com/questions/1709283/
+            how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
+        """
         mlat = sum(coord[0] for coord in vertices) / float(len(vertices))
         mlon = sum(coord[1] for coord in vertices) / float(len(vertices))
 

@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+""" This module defines the :class:`quantized_mesh_tile.terrain.TerrainTile`.
+More information about the format specification can be found here:
+http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
+
+Reference
+---------
+"""
 
 import os
 import cStringIO
@@ -20,10 +26,38 @@ def lerp(p, q, time):
     return ((1.0 - time) * p) + (time * q)
 
 
-# http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
-
-
 class TerrainTile:
+    """
+    The main class to read and write terrain a terrain tile.
+
+    Constructor arguments:
+
+    ``west``
+
+        The longitude at the western edge of the tile. Default is ``-1.0``.
+
+    ``east``
+
+        The longitude at the eastern edge of the tile. Default is ``1.0``.
+
+    ``south``
+
+        The latitude at the southern edge of the tile. Default is ``-1,0``.
+
+    ``north``
+
+        The latitude at the northern edge of the tile. Default is ``1.0``.
+
+    ``topology``
+
+        The topology of the mesh which but be an instance of
+        :class:`quantized_mesh_tile.topology.TerrainTopology`. Default is ``None``.
+
+    ``watermask``
+
+        A watermask matrix (Optional). Default is ``[]``.
+
+    """
     quantizedMeshHeader = OrderedDict([
         ['centerX', 'd'],  # 8bytes
         ['centerY', 'd'],
@@ -101,10 +135,7 @@ class TerrainTile:
         self._lats = []
         self._heights = []
         # Reprojected coordinates
-        self._easts = []
-        self._norths = []
-        self._alts = []
-        self.targetEPSG = 4326
+        self.EPSG = 4326
 
         # Extensions
         self.vLight = []
@@ -123,8 +154,11 @@ class TerrainTile:
         self.eastI = []
         self.northI = []
 
-    def __str__(self):
+        topology = kwargs.get('topology')
+        if topology is not None:
+            self.fromTerrainTopology(topology)
 
+    def __repr__(self):
         msg = 'Header: %s' % self.header
         msg += '\nVertexCount: %s' % len(self.u)
         msg += '\nuVertex: %s' % self.u
@@ -141,13 +175,16 @@ class TerrainTile:
         msg += '\nnorthIndicesCount: %s' % len(self.northI)
         msg += '\nnorthIndices: %s' % self.northI
         # output coordinates
-        msg += '\nCoordinates in EPSG %s ----------------------------\n' % self.targetEPSG
-        msg += '\n%s' % self.getVerticesCoordinates(epsg=self.targetEPSG)
+        msg += '\nCoordinates in EPSG %s ------------------------\n' % self.EPSG
+        msg += '\n%s' % self.getVerticesCoordinates()
 
         msg += '\nNumber of triangles: %s' % (len(self.indices) / 3)
         return msg
 
     def getContentType(self):
+        """
+        A method to determine the content type of a tile.
+        """
         baseContent = 'application/vnd.quantized-mesh'
         if self.hasLighting and self.hasWatermask:
             return baseContent + ';extensions=octvertexnormals-watermask'
@@ -158,22 +195,22 @@ class TerrainTile:
         else:
             return baseContent
 
-    def getVerticesCoordinates(self, epsg=4326):
+    def getVerticesCoordinates(self):
+        """
+        A method to retrieve the coordinates of the vertices in lon,lat,height.
+        """
         coordinates = []
-        if epsg == 4326:
-            if len(self._longs) == 0:
-                self.computeVerticesCoordinates()
-            for i, lon in enumerate(self._longs):
-                coordinates.append([lon, self._lats[i], self._heights[i]])
-        elif epsg != 4326:
-            if len(self._easts) == 0:
-                self.computeVerticesCoordinates(epsg=epsg)
-            for i, east in enumerate(self._easts):
-                coordinates.append([east, self._norths[i], self._alts[i]])
+        if len(self._longs) == 0:
+            self._computeVerticesCoordinates()
+        for i, lon in enumerate(self._longs):
+            coordinates.append([lon, self._lats[i], self._heights[i]])
         return coordinates
 
     # This is really slow, so only do it when really needed
-    def computeVerticesCoordinates(self, epsg=4326):
+    def _computeVerticesCoordinates(self):
+        """
+        A private method to compute the vertices coordinates.
+        """
         if len(self._longs) == 0:
             for u in self.u:
                 self._longs.append(lerp(self._west, self._east, float(u) / MAX))
@@ -188,13 +225,42 @@ class TerrainTile:
                     )
                 )
 
-    def _resetReprojectedVerticesCoordinates(self):
-        self._easts = []
-        self._norths = []
-        self._alts = []
-
     def fromFile(self, filePath, west, east, south, north,
             hasLighting=False, hasWatermask=False):
+        """
+        A method to read a terrain tile file. It is assumed that the tile unzipped.
+
+        Arguments:
+
+        ``filePath``
+
+`               An absolute or relative path to a quantized-mesh terrain tile. (Required)
+
+        ``west``
+
+            The longitude at the western edge of the tile. (Required)
+
+        ``east``
+
+            The longitude at the eastern edge of the tile. (Required)
+
+        ``south``
+
+            The latitude at the southern edge of the tile. (Required)
+
+        ``north``
+
+            The latitude at the northern edge of the tile. (Required)
+
+        ``hasLighting``
+
+            Indicate if the tile contains lighting information. Default is ``False``.
+
+        ``hasWatermask``
+
+            Indicate if the tile contains watermask information. Default is ``True``.
+
+        """
         self.__init__(west=west, east=east, south=south, north=north)
         self.hasLighting = hasLighting
         self.hasWatermask = hasWatermask
@@ -226,7 +292,6 @@ class TerrainTile:
                 self.h.append(hd)
 
             # Indices
-            # TODO: verify padding
             meta = TerrainTile.indexData16
             if vertexCount > TerrainTile.BYTESPLIT:
                 meta = TerrainTile.indexData32
@@ -286,11 +351,23 @@ class TerrainTile:
                 raise Exception('Should have reached end of file, but didn\'t')
 
     def toStringIO(self):
+        """
+        A method to write the terrain tile data to a file-like object (a string buffer).
+        """
         f = cStringIO.StringIO()
         self._writeTo(f)
         return f
 
     def toFile(self, filePath):
+        """
+        A method to write the terrain tile data to a physical file.
+
+        Argument:
+
+        ``filePath``
+
+`           An absolute or relative path to write the terrain tile. (Required)
+        """
         if not filePath.endswith('.terrain'):
             raise Exception('Wrong file extension')
 
@@ -301,6 +378,9 @@ class TerrainTile:
             self._writeTo(f)
 
     def _writeTo(self, f):
+        """
+        A private method to write the terrain tile to a file or file-like object.
+        """
         # Header
         for k, v in TerrainTile.quantizedMeshHeader.iteritems():
             f.write(packEntry(v, self.header[k]))
@@ -332,7 +412,6 @@ class TerrainTile:
             )
 
         # Indices
-        # TODO: verify padding
         meta = TerrainTile.indexData16
         if vertexCount > TerrainTile.BYTESPLIT:
             meta = TerrainTile.indexData32
@@ -411,6 +490,24 @@ class TerrainTile:
                 f.write(packEntry(TerrainTile.WaterMask['xy'], int(self.watermask[0][0])))
 
     def fromTerrainTopology(self, topology, bounds=None):
+        """
+        A method to prepare a terrain tile data structure.
+
+        Arguments:
+
+        ``topology``
+
+            The topology of the mesh which must be an instance of
+            :class:`quantized_mesh_tile.topology.TerrainTopology`. (Required)
+
+        ``bounds``
+
+            The bounds of a the terrain tile. (west, south, east, north)
+            If not defined, the bounds defined during initialization will be used.
+            If no bounds are provided, then the bounds
+            are extracted from the topology object.
+
+        """
         if not isinstance(topology, TerrainTopology):
             raise Exception('topology object must be an instance of TerrainTopology')
 
@@ -421,6 +518,10 @@ class TerrainTile:
             self._east = bounds[2]
             self._south = bounds[1]
             self._north = bounds[3]
+        elif len(set([self._west, self._south, self._east, self._north]).difference(
+                set([-1.0, -1.0, 1.0, 1.0]))) == 0:
+            # Bounds already defined earlier
+            pass
         else:
             # Set tile bounds
             self._west = topology.minLon
