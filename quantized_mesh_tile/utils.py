@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import math
+import gzip
+import cStringIO
 import numpy as np
 import cartesian3d as c3d
 from struct import pack, unpack, calcsize
@@ -179,3 +181,18 @@ def computeNormals(vertices, faces):
         normalsPerVertex[i] = c3d.normalize(normalsPerVertex[i])
 
     return normalsPerVertex
+
+
+def gzipFileObject(data):
+    compressed = cStringIO.StringIO()
+    gz = gzip.GzipFile(fileobj=compressed, mode='w', compresslevel=5)
+    gz.write(data.getvalue())
+    gz.close()
+    compressed.seek(0)
+    return compressed
+
+
+def ungzipFileObject(data):
+    buff = cStringIO.StringIO(data.read())
+    f = gzip.GzipFile(fileobj=buff)
+    return f

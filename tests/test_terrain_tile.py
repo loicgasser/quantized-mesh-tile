@@ -162,6 +162,51 @@ class TestTerrainTile(unittest.TestCase):
                 # Thus we only check the sign
                 self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
 
+    def testExtentionsReaderWriterGzipped(self):
+        z = 10
+        x = 1563
+        y = 590
+        geodetic = GlobalGeodetic(True)
+        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+
+        # Regular file not gzip compressed
+        ter = TerrainTile()
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter.fromFile(
+            'tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y),
+            hasLighting=True, hasWatermask=True
+        )
+
+        # Same file but gzipped this time
+        terG = TerrainTile()
+        terG = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        terG.fromFile(
+            'tests/data/%s_%s_%s_light_watermask.terrain.gz' % (z, x, y),
+            hasLighting=True, hasWatermask=True, gzipped=True
+        )
+
+        # check indices
+        self.assertEqual(len(terG.indices), len(ter.indices))
+        self.assertEqual(terG.indices[0], ter.indices[0])
+
+        # check edges
+        self.assertEqual(len(terG.westI), len(ter.westI))
+        self.assertEqual(len(terG.southI), len(ter.southI))
+        self.assertEqual(len(terG.eastI), len(ter.eastI))
+        self.assertEqual(len(terG.northI), len(ter.northI))
+
+        self.assertEqual(terG.westI[0], ter.westI[0])
+        self.assertEqual(terG.southI[0], ter.southI[0])
+        self.assertEqual(terG.eastI[0], ter.eastI[0])
+        self.assertEqual(terG.northI[0], ter.northI[0])
+
+        self.assertEqual(len(terG.watermask), len(ter.watermask))
+        self.assertEqual(len(terG.watermask[0]), len(ter.watermask[0]))
+        # Water only -> 255
+        self.assertEqual(terG.watermask[0][0], 255)
+        # To gzipped file
+        terG.toFile(self.tmpfile, gzipped=True)
+
     def testTileCreationFromTopology(self):
         wkts = [
             'POLYGON Z ((0.0 0.0 1.0, 0.0 1.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))',
@@ -177,4 +222,21 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._north, 1.0)
 
         fileLike = tile.toStringIO()
+        self.assertIsInstance(fileLike, cStringIO.OutputType)
+
+    def testGzippedTileCreationFromTopology(self):
+        wkts = [
+            'POLYGON Z ((0.0 0.0 1.0, 0.0 1.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))',
+            'POLYGON Z ((0.0 0.0 1.0, 1.0 0.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))'
+        ]
+        topology = TerrainTopology(geometries=wkts)
+        tile = TerrainTile(topology=topology)
+
+        # Check that the bounds are extracted from the terrain topology
+        self.assertEqual(tile._west, 0.0)
+        self.assertEqual(tile._south, 0.0)
+        self.assertEqual(tile._east, 1.0)
+        self.assertEqual(tile._north, 1.0)
+
+        fileLike = tile.toStringIO(gzipped=True)
         self.assertIsInstance(fileLike, cStringIO.OutputType)

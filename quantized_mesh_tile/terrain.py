@@ -7,12 +7,14 @@ Reference
 """
 
 import os
+import gzip
 import cStringIO
 from collections import OrderedDict
 import horizon_occlusion_point as occ
 from utils import (
     octEncode, octDecode, zigZagDecode, zigZagEncode,
-    unpackEntry, unpackIndices, decodeIndices, packEntry, packIndices, encodeIndices
+    gzipFileObject, ungzipFileObject, unpackEntry, unpackIndices,
+    decodeIndices, packEntry, packIndices, encodeIndices
 )
 from bbsphere import BoundingSphere
 from topology import TerrainTopology
@@ -245,7 +247,7 @@ class TerrainTile:
                     )
                 )
 
-    def fromFile(self, filePath, hasLighting=False, hasWatermask=False):
+    def fromFile(self, filePath, hasLighting=False, hasWatermask=False, gzipped=False):
         """
         A method to read a terrain tile file. It is assumed that the tile unzipped.
 
@@ -263,10 +265,16 @@ class TerrainTile:
 
             Indicate if the tile contains watermask information. Default is ``True``.
 
+        ``gzipped``
+
+            Indicate if the tile content is gzipped. Default is ``False``.
         """
         self.hasLighting = hasLighting
         self.hasWatermask = hasWatermask
         with open(filePath, 'rb') as f:
+            if gzipped:
+                f = ungzipFileObject(f)
+
             # Header
             for k, v in TerrainTile.quantizedMeshHeader.iteritems():
                 self.header[k] = unpackEntry(f, v)
@@ -352,15 +360,23 @@ class TerrainTile:
             if data:
                 raise Exception('Should have reached end of file, but didn\'t')
 
-    def toStringIO(self):
+    def toStringIO(self, gzipped=False):
         """
         A method to write the terrain tile data to a file-like object (a string buffer).
+
+        Arguments:
+
+        ``gzipped``
+
+            Indicate if the content should be gzipped. Default is ``False``.
         """
         f = cStringIO.StringIO()
         self._writeTo(f)
+        if gzipped:
+            f = gzipFileObject(f)
         return f
 
-    def toFile(self, filePath):
+    def toFile(self, filePath, gzipped=False):
         """
         A method to write the terrain tile data to a physical file.
 
@@ -368,16 +384,24 @@ class TerrainTile:
 
         ``filePath``
 
-`           An absolute or relative path to write the terrain tile. (Required)
+            An absolute or relative path to write the terrain tile. (Required)
+
+        ``gzipped``
+
+            Indicate if the content should be gzipped. Default is ``False``.
         """
-        if not filePath.endswith('.terrain'):
+        if not filePath.endswith('.terrain') and not filePath.endswith('.gz'):
             raise Exception('Wrong file extension')
 
         if os.path.isfile(filePath):
             raise IOError('File %s already exists' % filePath)
 
-        with open(filePath, 'wb') as f:
-            self._writeTo(f)
+        if not gzipped:
+            with open(filePath, 'wb') as f:
+                self._writeTo(f)
+        else:
+            with gzip.open(filePath, 'wb') as f:
+                self._writeTo(f)
 
     def _writeTo(self, f):
         """
