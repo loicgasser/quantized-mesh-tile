@@ -88,6 +88,9 @@ class TestTerrainTile(unittest.TestCase):
         for i, v in enumerate(ter.northI):
             self.assertEqual(v, ter2.northI[i], i)
 
+        self.assertEqual(ter2.getContentType(),
+            'application/vnd.quantized-mesh')
+
     def testWatermaskOnlyReader(self):
         z = 9
         x = 769
@@ -116,6 +119,9 @@ class TestTerrainTile(unittest.TestCase):
         for i in range(0, len(ter.watermask)):
             for j in range(0, len(ter.watermask[i])):
                 self.assertEqual(ter.watermask[i][j], ter2.watermask[i][j])
+
+        self.assertEqual(ter2.getContentType(),
+            'application/vnd.quantized-mesh;extensions=watermask')
 
     def testExtensionsReader(self):
         z = 10
@@ -161,6 +167,10 @@ class TestTerrainTile(unittest.TestCase):
                 # oct encoding and decoding
                 # Thus we only check the sign
                 self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
+
+        self.assertEqual(ter2.getContentType(),
+            'application/vnd.quantized-mesh;' +
+            'extensions=octvertexnormals-watermask')
 
     def testExtentionsReaderWriterGzipped(self):
         z = 10

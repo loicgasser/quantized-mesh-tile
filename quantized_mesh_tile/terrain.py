@@ -60,25 +60,43 @@ class TerrainTile:
         A watermask matrix (Optional). Default is ``[]``.
 
     Usage examples:
+        from quantized_mesh_tile.terrain import TerrainTile
+        from quantized_mesh_tile.topology import TerrainTopology
+        from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
-        # Read a terrain tile (unzipped)
+        # The tile coordinates
         x = 533
         y = 383
         z = 9
         geodetic = GlobalGeodetic(True)
         [west, south, east, north] = geodetic.TileBounds(x, y, z)
+
+        # Read a terrain tile (unzipped)
         tile = TerrainTile(west=west, south=south, east=east, north=north)
         tile.fromFile('mytile.terrain')
 
-        # Write a terrain tile locally from scratch
+        # Write a terrain tile locally from scratch (lon/lat/height)
         wkts = [
-            'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.1 3.1 3.3))',
-            'POLYGON Z ((1.2 1.5 4.2, 2.2 1.1 1.1, 2.1 2.2 3.3, 1.2 1.5 4.2))'
+            'POLYGON Z ((7.3828125 44.6484375 303.3, ' +
+                        '7.3828125 45.0 320.2, ' +
+                        '7.5585937 44.82421875 310.2, ' +
+                        '7.3828125 44.6484375 303.3))',
+            'POLYGON Z ((7.3828125 44.6484375 303.3, ' +
+                        '7.734375 44.6484375 350.3, ' +
+                        '7.5585937 44.82421875 310.2, ' +
+                        '7.3828125 44.6484375 303.3))',
+            'POLYGON Z ((7.734375 44.6484375 350.3, ' +
+                        '7.734375 45.0 330.3, ' +
+                        '7.5585937 44.82421875 310.2, ' +
+                        '7.734375 44.6484375 350.3))',
+            'POLYGON Z ((7.734375 45.0 330.3, ' +
+                        '7.5585937 44.82421875 310.2, ' +
+                        '7.3828125 45.0 320.2, ' +
+                        '7.734375 45.0 330.3))'
         ]
         topology = TerrainTopology(geometries=wkts)
         tile = TerrainTile(topology=topology)
         tile.toFile('mytile.terrain')
-
     """
     quantizedMeshHeader = OrderedDict([
         ['centerX', 'd'],  # 8bytes
