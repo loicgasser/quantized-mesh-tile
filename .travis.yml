@@ -1,13 +1,12 @@
 language: python
 python: 2.7
-virtualenv:
-  system_site_packages: true
 before_install:
 - sudo mv /etc/apt/sources.list.d/pgdg-source.list* /tmp
 - sudo apt-get remove -y libgdal1
 - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
 - sudo apt-get update -y
-- sudo apt-get install -y python-dev gdal-bin python-gdal
+- sudo apt-get install -y python-dev libgeos-dev
+- pip install -r dev-requirements.txt
 install:
 - pip install nose
 - pip install flake8

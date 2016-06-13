@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import unittest
 import os
+import unittest
+import cStringIO
 from quantized_mesh_tile.terrain import TerrainTile
+from quantized_mesh_tile.topology import TerrainTopology
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
 
@@ -29,13 +31,14 @@ class TestTerrainTile(unittest.TestCase):
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
-        ter = TerrainTile()
-        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y),
-            minx, miny, maxx, maxy)
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y))
         ter.toFile(self.tmpfile)
+        self.assertIsInstance(ter.__repr__(), str)
 
-        ter2 = TerrainTile()
-        ter2.fromFile(self.tmpfile, minx, miny, maxx, maxy)
+        ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter2.fromFile(self.tmpfile)
+        self.assertIsInstance(ter2.__repr__(), str)
 
         # check headers
         self.assertGreater(len(ter.header), 0)
@@ -85,16 +88,19 @@ class TestTerrainTile(unittest.TestCase):
         for i, v in enumerate(ter.northI):
             self.assertEqual(v, ter2.northI[i], i)
 
+        self.assertEqual(ter2.getContentType(),
+            'application/vnd.quantized-mesh')
+
     def testWatermaskOnlyReader(self):
         z = 9
         x = 769
         y = 319
         geodetic = GlobalGeodetic(True)
-
-        ter = TerrainTile()
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile('tests/data/%s_%s_%s_watermask.terrain' % (z, x, y),
-            minx, miny, maxx, maxy, hasWatermask=True)
+            hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), 256)
         for row in ter.watermask:
@@ -105,8 +111,8 @@ class TestTerrainTile(unittest.TestCase):
 
         ter.toFile(self.tmpfile)
 
-        ter2 = TerrainTile()
-        ter2.fromFile(self.tmpfile, minx, miny, maxx, maxy, hasWatermask=True)
+        ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter2.fromFile(self.tmpfile, hasWatermask=True)
 
         self.assertEqual(len(ter2.watermask), 256)
 
@@ -114,17 +120,21 @@ class TestTerrainTile(unittest.TestCase):
             for j in range(0, len(ter.watermask[i])):
                 self.assertEqual(ter.watermask[i][j], ter2.watermask[i][j])
 
+        self.assertEqual(ter2.getContentType(),
+            'application/vnd.quantized-mesh;extensions=watermask')
+
     def testExtensionsReader(self):
         z = 10
         x = 1563
         y = 590
         geodetic = GlobalGeodetic(True)
+        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
         ter = TerrainTile()
-        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile(
             'tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y),
-            minx, miny, maxx, maxy, hasLighting=True, hasWatermask=True
+            hasLighting=True, hasWatermask=True
         )
 
         # check indices
@@ -143,9 +153,9 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(ter.watermask[0][0], 255)
         ter.toFile(self.tmpfile)
 
-        ter2 = TerrainTile()
+        ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter2.fromFile(self.tmpfile,
-            minx, miny, maxx, maxy, hasLighting=True, hasWatermask=True)
+            hasLighting=True, hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), len(ter2.watermask))
         self.assertEqual(len(ter.watermask[0]), len(ter2.watermask[0]))
@@ -157,3 +167,86 @@ class TestTerrainTile(unittest.TestCase):
                 # oct encoding and decoding
                 # Thus we only check the sign
                 self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
+
+        self.assertEqual(ter2.getContentType(),
+            'application/vnd.quantized-mesh;' +
+            'extensions=octvertexnormals-watermask')
+
+    def testExtentionsReaderWriterGzipped(self):
+        z = 10
+        x = 1563
+        y = 590
+        geodetic = GlobalGeodetic(True)
+        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+
+        # Regular file not gzip compressed
+        ter = TerrainTile()
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter.fromFile(
+            'tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y),
+            hasLighting=True, hasWatermask=True
+        )
+
+        # Same file but gzipped this time
+        terG = TerrainTile()
+        terG = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        terG.fromFile(
+            'tests/data/%s_%s_%s_light_watermask.terrain.gz' % (z, x, y),
+            hasLighting=True, hasWatermask=True, gzipped=True
+        )
+
+        # check indices
+        self.assertEqual(len(terG.indices), len(ter.indices))
+        self.assertEqual(terG.indices[0], ter.indices[0])
+
+        # check edges
+        self.assertEqual(len(terG.westI), len(ter.westI))
+        self.assertEqual(len(terG.southI), len(ter.southI))
+        self.assertEqual(len(terG.eastI), len(ter.eastI))
+        self.assertEqual(len(terG.northI), len(ter.northI))
+
+        self.assertEqual(terG.westI[0], ter.westI[0])
+        self.assertEqual(terG.southI[0], ter.southI[0])
+        self.assertEqual(terG.eastI[0], ter.eastI[0])
+        self.assertEqual(terG.northI[0], ter.northI[0])
+
+        self.assertEqual(len(terG.watermask), len(ter.watermask))
+        self.assertEqual(len(terG.watermask[0]), len(ter.watermask[0]))
+        # Water only -> 255
+        self.assertEqual(terG.watermask[0][0], 255)
+        # To gzipped file
+        terG.toFile(self.tmpfile, gzipped=True)
+
+    def testTileCreationFromTopology(self):
+        wkts = [
+            'POLYGON Z ((0.0 0.0 1.0, 0.0 1.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))',
+            'POLYGON Z ((0.0 0.0 1.0, 1.0 0.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))'
+        ]
+        topology = TerrainTopology(geometries=wkts)
+        tile = TerrainTile(topology=topology)
+
+        # Check that the bounds are extracted from the terrain topology
+        self.assertEqual(tile._west, 0.0)
+        self.assertEqual(tile._south, 0.0)
+        self.assertEqual(tile._east, 1.0)
+        self.assertEqual(tile._north, 1.0)
+
+        fileLike = tile.toStringIO()
+        self.assertIsInstance(fileLike, cStringIO.OutputType)
+
+    def testGzippedTileCreationFromTopology(self):
+        wkts = [
+            'POLYGON Z ((0.0 0.0 1.0, 0.0 1.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))',
+            'POLYGON Z ((0.0 0.0 1.0, 1.0 0.0 1.0, 1.0 1.0 1.0, 0.0 0.0 1.0))'
+        ]
+        topology = TerrainTopology(geometries=wkts)
+        tile = TerrainTile(topology=topology)
+
+        # Check that the bounds are extracted from the terrain topology
+        self.assertEqual(tile._west, 0.0)
+        self.assertEqual(tile._south, 0.0)
+        self.assertEqual(tile._east, 1.0)
+        self.assertEqual(tile._north, 1.0)
+
+        fileLike = tile.toStringIO(gzipped=True)
+        self.assertIsInstance(fileLike, cStringIO.OutputType)

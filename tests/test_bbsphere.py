@@ -68,9 +68,8 @@ class TestBoundingSphere(unittest.TestCase):
 
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
-        ter = TerrainTile()
-        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y),
-            minx, miny, maxx, maxy)
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y))
 
         llh2ecef = lambda x: LLH2ECEF(x[0], x[1], x[2])
         coords = ter.getVerticesCoordinates()
