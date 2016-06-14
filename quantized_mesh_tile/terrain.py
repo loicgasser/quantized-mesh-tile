@@ -36,30 +36,31 @@ class TerrainTile:
 
     ``west``
 
-        The longitude at the western edge of the tile. Default is ``-1.0``.
+        The longitude at the western edge of the tile. Default is `-1.0`.
 
     ``east``
 
-        The longitude at the eastern edge of the tile. Default is ``1.0``.
+        The longitude at the eastern edge of the tile. Default is `1.0`.
 
     ``south``
 
-        The latitude at the southern edge of the tile. Default is ``-1,0``.
+        The latitude at the southern edge of the tile. Default is `-1.0`.
 
     ``north``
 
-        The latitude at the northern edge of the tile. Default is ``1.0``.
+        The latitude at the northern edge of the tile. Default is `1.0`.
 
     ``topology``
 
         The topology of the mesh which but be an instance of
-        :class:`quantized_mesh_tile.topology.TerrainTopology`. Default is ``None``.
+        :class:`quantized_mesh_tile.topology.TerrainTopology`. Default is `None`.
 
     ``watermask``
 
-        A watermask matrix (Optional). Default is ``[]``.
+        A watermask matrix (Optional). Default is `[]`.
 
-    Usage examples:
+    Usage examples::
+
         from quantized_mesh_tile.terrain import TerrainTile
         from quantized_mesh_tile.topology import TerrainTopology
         from quantized_mesh_tile.global_geodetic import GlobalGeodetic
@@ -97,6 +98,7 @@ class TerrainTile:
         topology = TerrainTopology(geometries=wkts)
         tile = TerrainTile(topology=topology)
         tile.toFile('mytile.terrain')
+
     """
     quantizedMeshHeader = OrderedDict([
         ['centerX', 'd'],  # 8bytes
