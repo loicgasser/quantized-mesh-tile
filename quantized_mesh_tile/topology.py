@@ -30,13 +30,25 @@ class TerrainTopology:
         A list of triplet of vertices using the following structure:
         ``(((lon0/lat0/height0),(...),(lon2,lat2,height2)),(...))``
 
-        Default is ``[]``.
+        Default is `[]`.
 
     ``hasLighting``
 
         Indicate whether unit vectors should be computed for the lighting extension.
 
-        Default is ``False``.
+        Default is `False`.
+
+    Usage example::
+
+        from quantized_mesh_tile.topology import TerrainTopology
+        triangles = [
+            [[45.0, 7.1, 401.0], [45.0, 7.2, 400.5], [45.2, 7.12, 410.1]],
+            [[45.0, 7.2, 400.5], [44.9, 7.3, 401.5], [45.2, 7.4, 400.2]],
+            [[45.2, 7.12, 410.1], [44.9, 7.3, 401.5], [44.8, 6.9, 408.0]],
+            [[45.2, 7.12, 410.1], [44.8, 6.9, 408.0], [45.2, 7.12, 410.1]]
+        ]
+        topology = TerrainTopology(geometries=triangles)
+        print topology
 
     """
 
@@ -206,8 +218,8 @@ class TerrainTopology:
         """
         Private method to make sure vertices unwind in counterwise order.
         Inspired by:
-        http://stackoverflow.com/questions/1709283/
-            how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
+        http://stackoverflow.com/questions/1709283/\
+        how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
         """
         mlat = sum(coord[0] for coord in vertices) / float(len(vertices))
         mlon = sum(coord[1] for coord in vertices) / float(len(vertices))
@@ -222,80 +234,145 @@ class TerrainTopology:
 
     @property
     def uVertex(self):
+        """
+        A class property returning the horizontal coordinates of the vertices
+        in the tile. Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return self.vertices[:, 0]
 
     @property
     def vVertex(self):
+        """
+        A class property returning the vertical coordinates of the vertices
+        in the tile. Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return self.vertices[:, 1]
 
     @property
     def hVertex(self):
+        """
+        A class property returning the height of the vertices in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return self.vertices[:, 2]
 
     @property
     def minLon(self):
+        """
+        A class property returning the minimal longitude in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return np.min(self.vertices[:, 0])
 
     @property
     def minLat(self):
+        """
+        A class property returning the minimal latitude in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return np.min(self.vertices[:, 1])
 
     @property
     def minHeight(self):
+        """
+        A class property returning the minimal height in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return np.min(self.vertices[:, 2])
 
     @property
     def maxLon(self):
+        """
+        A class property returning the maximal longitude in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return np.max(self.vertices[:, 0])
 
     @property
     def maxLat(self):
+        """
+        A class property returning the maximal latitude in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return np.max(self.vertices[:, 1])
 
     @property
     def maxHeight(self):
+        """
+        A class property returning the maximal height in the tile.
+        Normally never used directly.
+        """
         if isinstance(self.vertices, np.ndarray):
             return np.max(self.vertices[:, 2])
 
     @property
     def ecefMinX(self):
+        """
+        A class property returning the minimal x value in ECEF
+        coordinate system. Normally never used directly.
+        """
         if isinstance(self.cartesianVertices, np.ndarray):
             return np.min(self.cartesianVertices[:, 0])
 
     @property
     def ecefMinY(self):
+        """
+        A class property returning the minimal y value in ECEF
+        coordinate system. Normally never used directly.
+        """
         if isinstance(self.cartesianVertices, np.ndarray):
             return np.min(self.cartesianVertices[:, 1])
 
     @property
     def ecefMinZ(self):
+        """
+        A class property returning the minimal z value in ECEF
+        coordinate system. Normally never used directly.
+        """
         if isinstance(self.cartesianVertices, np.ndarray):
             return np.min(self.cartesianVertices[:, 2])
 
     @property
     def ecefMaxX(self):
+        """
+        A class property returning the maximal x value in ECEF
+        coordinate system. Normally never used directly.
+        """
         if isinstance(self.cartesianVertices, np.ndarray):
             return np.max(self.cartesianVertices[:, 0])
 
     @property
     def ecefMaxY(self):
+        """
+        A class property returning the maximal y value in ECEF
+        coordinate system. Normally never used directly.
+        """
         if isinstance(self.cartesianVertices, np.ndarray):
             return np.max(self.cartesianVertices[:, 1])
 
     @property
     def ecefMaxZ(self):
+        """
+        A class property returning the maximal z value in ECEF
+        coordinate system. Normally never used directly.
+        """
         if isinstance(self.cartesianVertices, np.ndarray):
             return np.max(self.cartesianVertices[:, 2])
 
     @property
     def indexData(self):
+        """
+        A class property retuning a list specifying how the vertices are linked together.
+        These indices refer to the values in `uVertex`, `vVertex` and `hVertex` of
+        this class. Normally never used directly.
+        """
         if isinstance(self.faces, np.ndarray):
             return self.faces.flatten()
