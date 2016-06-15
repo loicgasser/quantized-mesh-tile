@@ -7,8 +7,8 @@ Reference
 
 import math
 import numpy as np
-from llh_ecef import LLH2ECEF
-from utils import computeNormals
+from .llh_ecef import LLH2ECEF
+from .utils import computeNormals
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb

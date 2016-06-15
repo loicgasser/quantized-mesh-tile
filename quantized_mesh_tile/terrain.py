@@ -11,13 +11,13 @@ import gzip
 import cStringIO
 from collections import OrderedDict
 import horizon_occlusion_point as occ
-from utils import (
+from .utils import (
     octEncode, octDecode, zigZagDecode, zigZagEncode,
     gzipFileObject, ungzipFileObject, unpackEntry, unpackIndices,
     decodeIndices, packEntry, packIndices, encodeIndices
 )
-from bbsphere import BoundingSphere
-from topology import TerrainTopology
+from .bbsphere import BoundingSphere
+from .topology import TerrainTopology
 
 MAX = 32767.0
 # For a tile of 256px * 256px
@@ -56,8 +56,13 @@ class TerrainTile:
         :class:`quantized_mesh_tile.topology.TerrainTopology`. Default is `None`.
 
     ``watermask``
-
-        A watermask matrix (Optional). Default is `[]`.
+        A water mask list (Optional). Adds rendering water effect.
+        The water mask list is either one byte, `[0]` for land and `[255]` for
+        water, either a list of 256*256 values ranging from 0 to 255.
+        Values in the mask are defined from north-to-south and west-to-east.
+        Per default no watermask is applied. Note that the water mask effect depends on
+        the texture of the raster layer drapped over your terrain.
+        Default is `[]`.
 
     Usage examples::
 
@@ -410,9 +415,6 @@ class TerrainTile:
 
             Indicate if the content should be gzipped. Default is ``False``.
         """
-        if not filePath.endswith('.terrain') and not filePath.endswith('.gz'):
-            raise Exception('Wrong file extension')
-
         if os.path.isfile(filePath):
             raise IOError('File %s already exists' % filePath)
 
