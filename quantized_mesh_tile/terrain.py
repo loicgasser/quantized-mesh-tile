@@ -30,7 +30,7 @@ def lerp(p, q, time):
 
 class TerrainTile:
     """
-    The main class to read and write terrain a terrain tile.
+    The main class to read and write a terrain tile.
 
     Constructor arguments:
 
