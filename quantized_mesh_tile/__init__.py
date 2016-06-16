@@ -70,7 +70,7 @@ def decode(filePath, bounds, hasLighting=False, hasWatermask=False, gzipped=Fals
     ``filePath``
 
         An absolute or relative path to write the terrain tile. (Required)
- 
+
     ``bounds``
 
         The bounds of the terrain tile. (west, south, east, north) (Required).

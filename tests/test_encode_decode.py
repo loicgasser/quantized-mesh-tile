@@ -19,6 +19,7 @@ geometries = [
      (-180.0, -22.503, 50.312))
 ]
 
+
 class TestTopology(unittest.TestCase):
 
     def setUp(self):
@@ -36,7 +37,7 @@ class TestTopology(unittest.TestCase):
         bounds = globalGeodetic.TileBounds(x, y, z)
         ter = encode(geometries, bounds=bounds)
         ter.toFile(self.tmpfile)
-        ter2 = decode(self.tmpfile, bounds) 
+        ter2 = decode(self.tmpfile, bounds)
 
         self.assertIsInstance(ter.__repr__(), str)
         self.assertIsInstance(ter2.__repr__(), str)
