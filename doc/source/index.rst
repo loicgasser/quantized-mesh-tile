@@ -10,6 +10,7 @@ Reference Documentation
    encode
    terraintile
    terraintopology
+   globalgeodetic
    viewer
 
 Requirements

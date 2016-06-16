@@ -1,53 +1,50 @@
-# -*- coding: utf-8 -*-
+""" This module defines the :class:`quantized_mesh_tile.global_geodetic.GlobalGeodetic`.
+Initial code from:
+https://svn.osgeo.org/gdal/trunk/gdal/swig/python/scripts/gdal2tiles.py
+Functions necessary for generation of global tiles in Plate Carre projection,
+EPSG:4326, unprojected profile.
+Pixel and tile coordinates are in TMS notation (origin [0,0] in bottom-left).
+What coordinate conversions do we need for TMS Global Geodetic tiles?
+Global Geodetic tiles are using geodetic coordinates (latitude,longitude)
+directly as planar coordinates XY (it is also called Unprojected or Plate
+Carre). We need only scaling to pixel pyramid and cutting to tiles.
+Pyramid has on top level two tiles, so it is not square but rectangle.
+Area [-180,-90,180,90] is scaled to 512x256 pixels.
+TMS has coordinate origin (for pixels and tiles) in bottom-left corner.
 
+Reference
+---------
+"""
 import math
 
 MAXZOOMLEVEL = 32
 
 
-# Initial code from
-# https://svn.osgeo.org/gdal/trunk/gdal/swig/python/scripts/gdal2tiles.py
 class GlobalGeodetic(object):
-
     """
-    TMS Global Geodetic Profile
-    ---------------------------
-    Functions necessary for generation of global tiles in Plate Carre projection,
-    EPSG:4326, "unprojected profile".
-    Such tiles are compatible with Google Earth (as any other EPSG:4326 rasters)
-    and you can overlay the tiles on top of OpenLayers base map.
-    Pixel and tile coordinates are in TMS notation (origin [0,0] in bottom-left).
-    What coordinate conversions do we need for TMS Global Geodetic tiles?
-      Global Geodetic tiles are using geodetic coordinates (latitude,longitude)
-      directly as planar coordinates XY (it is also called Unprojected or Plate
-      Carre). We need only scaling to pixel pyramid and cutting to tiles.
-      Pyramid has on top level two tiles, so it is not square but rectangle.
-      Area [-180,-90,180,90] is scaled to 512x256 pixels.
-      TMS has coordinate origin (for pixels and tiles) in bottom-left corner.
-      Rasters are in EPSG:4326 and therefore are compatible with Google Earth.
-         LatLon      <->      Pixels      <->     Tiles
-     WGS84 coordinates   Pixels in pyramid  Tiles in pyramid
-         lat/lon         XY pixels Z zoom      XYZ from TMS
-        EPSG:4326
-         .----.                ----
-        /      \     <->    /--------/    <->      TMS
-        \      /         /--------------/
-         -----        /--------------------/
-       WMS, KML    Web Clients, Google Earth  TileMapService
+    Contructor arguments:
+
+    ``tmscompatible``
+
+        If set to True, defaults the resolution factor to 0.703125 (2 tiles @ level 0)
+        Adhers to OSGeo TMS spec and therefore Cesium.
+        http://wiki.osgeo.org/wiki/Tile_Map_Service_Specification#global-geodetic
+        If set to False, defaults the resolution factor to 1.40625 (1 tile @ level 0)
+        Adheres OpenLayers, MapProxy, etc default resolution for WMTS.
+
+    ``tileSize``
+
+        The size of the tile in pixel. Default is `256`.
+
     """
 
     def __init__(self, tmscompatible, tileSize=256):
         self.tileSize = tileSize
         if tmscompatible is not None:
-            # Defaults the resolution factor to 0.703125 (2 tiles @ level 0)
-            # Adhers to OSGeo TMS spec
-            # http://wiki.osgeo.org/wiki/Tile_Map_Service_Specification#global-geodetic
             self.resFact = 180.0 / self.tileSize
             self._numberOfLevelZeroTilesX = 2
             self._numberOfLevelZeroTilesY = 1
         else:
-            # Defaults the resolution factor to 1.40625 (1 tile @ level 0)
-            # Adheres OpenLayers, MapProxy, etc default resolution for WMTS
             self.resFact = 360.0 / self.tileSize
             self._numberOfLevelZeroTilesX = 1
             self._numberOfLevelZeroTilesY = 1
