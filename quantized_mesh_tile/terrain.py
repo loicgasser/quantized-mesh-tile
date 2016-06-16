@@ -181,7 +181,7 @@ class TerrainTile:
         self._longs = []
         self._lats = []
         self._heights = []
-        # Reprojected coordinates
+        self._triangles = []
         self.EPSG = 4326
 
         # Extensions
@@ -206,7 +206,8 @@ class TerrainTile:
             self.fromTerrainTopology(topology)
 
     def __repr__(self):
-        msg = 'Header: %s' % self.header
+        msg = 'Header: %s\n' % self.header
+        # Output intermediate structure
         msg += '\nVertexCount: %s' % len(self.u)
         msg += '\nuVertex: %s' % self.u
         msg += '\nvVertex: %s' % self.v
@@ -220,12 +221,12 @@ class TerrainTile:
         msg += '\neastIndicesCount: %s' % len(self.eastI)
         msg += '\neastIndices: %s' % self.eastI
         msg += '\nnorthIndicesCount: %s' % len(self.northI)
-        msg += '\nnorthIndices: %s' % self.northI
-        # output coordinates
-        msg += '\nCoordinates in EPSG %s ------------------------\n' % self.EPSG
-        msg += '\n%s' % self.getVerticesCoordinates()
-
+        msg += '\nnorthIndices: %s\n' % self.northI
+        # Output coordinates
         msg += '\nNumber of triangles: %s' % (len(self.indices) / 3)
+        msg += '\nTriangles coordinates in EPSG %s' % self.EPSG
+        msg += '\n%s' % self.getTrianglesCoordinates()
+
         return msg
 
     def getContentType(self):
@@ -247,13 +248,39 @@ class TerrainTile:
         A method to retrieve the coordinates of the vertices in lon,lat,height.
         """
         coordinates = []
-        if len(self._longs) == 0:
-            self._computeVerticesCoordinates()
+        self._computeVerticesCoordinates()
         for i, lon in enumerate(self._longs):
-            coordinates.append([lon, self._lats[i], self._heights[i]])
+            coordinates.append((lon, self._lats[i], self._heights[i]))
         return coordinates
 
-    # This is really slow, so only do it when really needed
+    def getTrianglesCoordinates(self):
+        """
+        A method to retrieve triplet of coordinates representing the triangles
+        in lon,lat,height.
+        """
+        triangles = []
+        self._computeVerticesCoordinates()
+        indices = iter(self.indices)
+        for i in range(0, len(self.indices) - 1, 3):
+            vi1 = indices.next()
+            vi2 = indices.next()
+            vi3 = indices.next()
+            triangle = (
+                (self._longs[vi1],
+                 self._lats[vi1],
+                 self._heights[vi1]),
+                (self._longs[vi2],
+                 self._lats[vi2],
+                 self._heights[vi2]),
+                (self._longs[vi3],
+                 self._lats[vi3],
+                 self._heights[vi3])
+            )
+            triangles.append(triangle)
+        if len(list(indices)) > 0:
+            raise Exception('Corrupted tile')
+        return triangles
+
     def _computeVerticesCoordinates(self):
         """
         A private method to compute the vertices coordinates.
