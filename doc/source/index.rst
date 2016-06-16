@@ -7,6 +7,7 @@ Reference Documentation
 .. toctree::
    :maxdepth: 1
 
+   tutorial
    encode
    terraintile
    terraintopology
@@ -24,6 +25,26 @@ Installation
 Quantized mesh tile is available on the Python Package Index. So it can be installed
 with pip and easy_install tools.
 
+Disclamer
+---------
+
+This library is only at a very early stage (very first version) and is subject to changes.
+
+Known issue
+-----------
+
+This library can read and write tiles with the lighting extension header, but still fail to create correct unit 
+vectors from scratch. PRs are welcome though!
+
+Development
+-----------
+
+The code is available on GitHub: https://github.com/loicgasser/quantized-mesh-tile
+
+Contributors:
+
+* Loïc Gasser (https://github.com/loicgasser)
+* Gilbert Jeiziner (https://github.com/gjn)
 
 Vizualize a terrain tile
 ------------------------
