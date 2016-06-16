@@ -228,8 +228,7 @@ class TerrainTopology:
             return (math.atan2(coord[0] - mlat, coord[1] - mlon) + 2 * math.pi) % (
                 2 * math.pi
             )
-
-        vertices.sort(key=algo, reverse=True)
+        vertices = sorted(vertices, key=algo, reverse=True)
         return vertices
 
     @property
