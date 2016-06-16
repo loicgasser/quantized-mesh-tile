@@ -9,9 +9,10 @@ from .terrain import TerrainTile
 from .topology import TerrainTopology
 
 
-def encode(geometries, bounds=[], watermask=[], hasLighting=False, gzipped=False):
+def encode(geometries, bounds=[], watermask=[], hasLighting=False):
     """
-    Function to convert geometries in a quantized-mesh encoded string buffer.
+    Function to convert geometries into a
+    :class:`quantized_mesh_tile.terrain.TerrainTile` instance.
 
     Arguments:
 
@@ -48,13 +49,6 @@ def encode(geometries, bounds=[], watermask=[], hasLighting=False, gzipped=False
 
         Default is `[]`.
 
-
-    ``gzipped``
-
-        Indicate if the tile content is gzipped.
-
-        Default is `False`.
-
     """
     topology = TerrainTopology(geometries=geometries, hasLighting=hasLighting)
     if len(bounds) == 4:
@@ -63,7 +57,7 @@ def encode(geometries, bounds=[], watermask=[], hasLighting=False, gzipped=False
             west=west, south=south, east=east, north=north, topology=topology)
     else:
         tile = TerrainTile(watermask=watermask, topology=topology)
-    return tile.toStringIO(gzipped=gzipped)
+    return tile
 
 
 def decode(filePath, bounds, hasLighting=False, hasWatermask=False, gzipped=False):
