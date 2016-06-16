@@ -7,9 +7,22 @@ Reference Documentation
 .. toctree::
    :maxdepth: 1
 
-   terraintopology
+   encode
    terraintile
+   terraintopology
+   globalgeodetic
    viewer
+
+Requirements
+------------
+
+Quantized mesh tile requires Python >=2.7 (not including Python 3.x) and GEOS >= 3.3.
+
+Installation
+------------
+
+Quantized mesh tile is available on the Python Package Index. So it can be installed
+with pip and easy_install tools.
 
 
 Vizualize a terrain tile
@@ -21,8 +34,8 @@ Unit vectors are also displayed if they are present.
 .. raw:: html
 
   <form class="tile" onsubmit="reload(event)">
-    z: <input type="text" name="z" value="14">
-    x: <input type="text" name="x" value="24297">
+    z: <input type="text" name="z" value="14"><br><br>
+    x: <input type="text" name="x" value="24297"><br><br>
     y: <input type="text" name="y" value="10735"><br><br>
     tileUrl: <input type="text" name="tileUrl" value="https://assets.agi.com/stk-terrain/world/14/24297/10735.terrain?v=1.16389.0" style="width: 489px;"><br><br>
     <button type="submit" value="submit">Go to viewer</button>

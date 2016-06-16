@@ -7,8 +7,8 @@ Reference
 
 import math
 import numpy as np
-from llh_ecef import LLH2ECEF
-from utils import computeNormals
+from .llh_ecef import LLH2ECEF
+from .utils import computeNormals
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb
@@ -228,8 +228,7 @@ class TerrainTopology:
             return (math.atan2(coord[0] - mlat, coord[1] - mlon) + 2 * math.pi) % (
                 2 * math.pi
             )
-
-        vertices.sort(key=algo, reverse=True)
+        vertices = sorted(vertices, key=algo, reverse=True)
         return vertices
 
     @property

@@ -60,6 +60,10 @@ class TestTerrainTile(unittest.TestCase):
             self.assertEqual(v, ter2.v[i])
         for i, v in enumerate(ter.h):
             self.assertEqual(v, ter2.h[i])
+        self.assertEqual(
+            len(ter.getVerticesCoordinates()),
+            len(ter2.getVerticesCoordinates())
+        )
 
         # check indices
         self.assertGreater(len(ter.indices), 0)
