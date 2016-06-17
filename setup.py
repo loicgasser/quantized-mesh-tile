@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 setup(name='quantized-mesh-tile',
       version='0.1.1',
       description='Quantized-Mesh format reader and writer',
-      author='Loic√c Gaer',
+      author=u'Loic Gasser',
       author_email='loicgasser4@gmail.com',
       license='MIT',
       url='https://github.com/loicgasser/quantized-mesh-tile',
