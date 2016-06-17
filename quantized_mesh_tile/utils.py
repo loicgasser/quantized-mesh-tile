@@ -196,3 +196,41 @@ def ungzipFileObject(data):
     buff = cStringIO.StringIO(data.read())
     f = gzip.GzipFile(fileobj=buff)
     return f
+
+
+def getCoordsIndex(n, i):
+    return i + 1 if n - 1 != i else 0
+
+
+# Creates all the potential pairs of coords
+def createCoordsPairs(l):
+    coordsPairs = []
+    for i in xrange(0, len(l)):
+        coordsPairs.append([l[i], l[(i + 2) % len(l)]])
+    return coordsPairs
+
+
+def squaredDistances(coordsPairs):
+    sDistances = []
+    for coordsPair in coordsPairs:
+        sDistances.append(c3d.distanceSquared(coordsPair[0], coordsPair[1]))
+    return sDistances
+
+
+def collapseIntoTriangles(coords):
+    triangles = []
+    while len(coords) > 3:
+        # Create all possible pairs of coordinates
+        coordsPairs = createCoordsPairs(coords)
+        sDistances = squaredDistances(coordsPairs)
+        index = sDistances.index(min(sDistances))
+        i = getCoordsIndex(len(coords), index)
+        triangle = coordsPairs[index] + [coords[i]]
+        triangles.append(triangle)
+
+        # Remove the converging point
+        # As this point is not available to create a new triangle anymore
+        convergingPoint = coords.index(coords[i])
+        coords.pop(convergingPoint)
+
+    return triangles + [coords]
