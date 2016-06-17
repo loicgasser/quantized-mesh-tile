@@ -5,7 +5,7 @@ Quantized mesh tile viewer
 
 .. raw:: html
 
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
   <script type="text/javascript" src="http://thematicmapping.org/playground/webgl/terrain/lib/three.min.js"></script>
   <script type="text/javascript" src="http://thematicmapping.org/playground/webgl/terrain/lib/TrackballControls.js"></script>
   <script type="text/javascript" src="http://thematicmapping.org/playground/webgl/terrain/lib/TerrainLoader.js"></script>
