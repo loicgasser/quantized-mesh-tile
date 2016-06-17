@@ -2,4 +2,5 @@
 *.egg-info
 .venv
 *.swp
+dist/
 doc/build/
