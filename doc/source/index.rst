@@ -46,6 +46,20 @@ Contributors:
 * Loïc Gasser (https://github.com/loicgasser)
 * Gilbert Jeiziner (https://github.com/gjn)
 
+Styling:
+
+Max line length is 90.
+
+We use flake8 to lint the project. Here are the rules we ignore.
+
+* E128: continuation line under-indented for visual indent
+* E221: multiple spaces before operator
+* E241: multiple spaces after ':'
+* E251: multiple spaces around keyword/parameter equals
+* E272: multiple spaces before keyword
+* E731: do not assign a lambda expression, use a def
+* W503: line break before binary operator
+
 Vizualize a terrain tile
 ------------------------
 
