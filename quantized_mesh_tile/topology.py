@@ -8,7 +8,7 @@ Reference
 import math
 import numpy as np
 from .llh_ecef import LLH2ECEF
-from .utils import computeNormals
+from .utils import computeNormals, collapseIntoTriangles
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb
@@ -32,6 +32,13 @@ class TerrainTopology:
 
         Default is `[]`.
 
+    ``autocorrectGeometries``
+
+        When set to `True`, it will attempt to fix geometries that are not
+        triangles. This often happens when geometries are clipped from an existing mesh.
+
+        Default is `False`.
+
     ``hasLighting``
 
         Indicate whether unit vectors should be computed for the lighting extension.
@@ -42,19 +49,28 @@ class TerrainTopology:
 
         from quantized_mesh_tile.topology import TerrainTopology
         triangles = [
-            [[45.0, 7.1, 401.0], [45.0, 7.2, 400.5], [45.2, 7.12, 410.1]],
-            [[45.0, 7.2, 400.5], [44.9, 7.3, 401.5], [45.2, 7.4, 400.2]],
-            [[45.2, 7.12, 410.1], [44.9, 7.3, 401.5], [44.8, 6.9, 408.0]],
-            [[45.2, 7.12, 410.1], [44.8, 6.9, 408.0], [45.2, 7.12, 410.1]]
+            [[7.3828125, 44.6484375, 303.3],
+             [7.3828125, 45.0, 320.2],
+             [7.5585937, 44.82421875, 310.2]],
+            [[7.3828125, 44.6484375, 303.3],
+             [7.734375, 44.6484375, 350.3],
+             [7.734375, 44.6484375, 350.3]],
+            [[7.734375, 44.6484375, 350.3],
+             [7.734375, 45.0, 330.3],
+             [7.5585937, 44.82421875, 310.2]],
+            [[7.734375, 45.0, 330.3],
+             [7.5585937, 44.82421875, 310.2],
+             [7.3828125, 45.0, 320.2]]
         ]
         topology = TerrainTopology(geometries=triangles)
         print topology
 
     """
 
-    def __init__(self, geometries=[], hasLighting=False):
+    def __init__(self, geometries=[], autocorrectGeometries=False, hasLighting=False):
 
         self.geometries = geometries
+        self.autocorrectGeometries = autocorrectGeometries
         self.hasLighting = hasLighting
 
         self.vertices = []
@@ -105,15 +121,24 @@ class TerrainTopology:
             ``(((lon0/lat0/height0),(...),(lon2,lat2,height2)),(...))``
         """
         if isinstance(geometries, (list, tuple)) and len(geometries) > 0:
-            isVerticesList = self._isVerticesList(geometries)
             for geometry in geometries:
-                if not isVerticesList:
-                    if not isinstance(geometry, BaseGeometry):
-                        geometry = self._loadGeometry(geometry)
+                if isinstance(geometry, (unicode, str)):
+                    geometry = self._loadGeometry(geometry)
+                    vertices = self._extractVertices(geometry)
+                elif isinstance(geometry, BaseGeometry):
                     vertices = self._extractVertices(geometry)
                 else:
                     vertices = geometry
-                self._addVertices(vertices)
+
+                if self.autocorrectGeometries:
+                    if len(vertices) > 3:
+                        triangles = collapseIntoTriangles(vertices)
+                        for triangle in triangles:
+                            self._addVertices(triangle)
+                    else:
+                        self._addVertices(vertices)
+                else:
+                    self._addVertices(vertices)
             self._create()
 
     def _extractVertices(self, geometry):
@@ -128,34 +153,22 @@ class TerrainTopology:
         if not isinstance(geometry, Polygon):
             raise ValueError('Only polygons are accepted.')
         vertices = list(geometry.exterior.coords)
-        if len(vertices) != 4:
+        if len(vertices) != 4 and not self.autocorrectGeometries:
             raise ValueError('None triangular shape has beeen found.')
-        return vertices[:3]
-
-    def _isVerticesList(self, geometries):
-        """
-        Method to determine if the geometries provided are in the form of
-        a list of vertices.
-
-        You should normally never use this method directly.
-        """
-        geom = geometries[0]
-        if len(geom) == 3:
-            coords = geom[0]
-            if len(coords) == 3:
-                return True
-        else:
-            return False
+        return vertices[:len(vertices) - 1]
 
     def _loadGeometry(self, geometrySpec):
         """
         A private method to convert a (E)WKB or (E)WKT to a Shapely geometry.
         """
-        try:
-            geometry = load_wkb(geometrySpec)
-        except:
+        if geometrySpec.startswith('POLYGON Z'):
             try:
                 geometry = load_wkt(geometrySpec)
+            except:
+                geometry = None
+        else:
+            try:
+                geometry = load_wkb(geometrySpec)
             except:
                 geometry = None
 

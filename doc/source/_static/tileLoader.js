@@ -162,8 +162,8 @@ var destroyScene = function() {
 };
 
 var updateScene = function(z, x, y, tileUrl) {
-  width  = window.innerWidth,
-  height = window.innerHeight;
+  width  = $('#quantized-mesh-tile-viewer').innerWidth();
+  height = $(window).innerHeight();
   if (scene) {
     destroyScene();
     empty(document.getElementById('webgl'));

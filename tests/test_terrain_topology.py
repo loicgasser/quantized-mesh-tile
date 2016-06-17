@@ -134,6 +134,40 @@ class TestTopology(unittest.TestCase):
         self.assertEqual(topology.maxLat, 3.1)
         self.assertEqual(topology.maxHeight, 4.5)
 
+    def testTopologyWithAutocorrect(self):
+        topology = TerrainTopology(geometries=[vertices_1, vertices_2],
+            autocorrectGeometries=True)
+        self.assertEqual(len(topology.faces), 2)
+
+        vertices_3 = [
+            [1.2, 3.2, 5.2],
+            [2.2, 2.1, 3.1],
+            [1.2, 4.1, 3.2],
+            [2.1, 4.7, 2.9]
+        ]
+        topology = TerrainTopology(geometries=[vertices_1, vertices_3],
+            autocorrectGeometries=True)
+        self.assertEqual(len(topology.faces), 3)
+
+        wkt = 'POLYGON Z ((2.4 3.1 3.3, 1.2 1.9 4.2, 3.2 2.3 4.5, 2.5 1.6 1.1,' \
+              ' 2.4 3.1 3.3))'
+        topology = TerrainTopology(geometries=[vertices_1, wkt],
+            autocorrectGeometries=True)
+        self.assertEqual(len(topology.faces), 3)
+
+        topology = TerrainTopology(geometries=[wkt], autocorrectGeometries=True)
+        self.assertEqual(len(topology.faces), 2)
+
+        wkt = 'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.5 1.2 1.1,' \
+              ' 4.2 2.1 4.8, 2.1 3.1 3.3))'
+        topology = TerrainTopology(geometries=[wkt], autocorrectGeometries=True)
+        self.assertEqual(len(topology.faces), 3)
+
+        wkt = 'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.5 1.2 1.1,' \
+              ' 4.2 2.1 4.8, 6.2 3.2 1.1, 2.1 3.1 3.3))'
+        topology = TerrainTopology(geometries=[wkt], autocorrectGeometries=True)
+        self.assertEqual(len(topology.faces), 4)
+
     def testTopologyBadGeoms(self):
         wkt = 'POLYGON Z ((2.1 3.1 3.3, 1.2 1.5 4.2, 3.2 2.2 4.5, 2.5 1.2 1.1,' \
               ' 2.1 3.1 3.3))'
