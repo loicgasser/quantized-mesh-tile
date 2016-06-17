@@ -74,6 +74,7 @@ For a full list of input formats for the geometries, please refer to :class:`qua
 
   >>> from quantized_mesh_tile import encode
   >>> tile = encode(geometries, bounds=bounds)
+  >>> print len(tile.getTrianglesCoordinates())
   >>> tile.toFile('%s/%s/%s.terrain' % (z, x, y))
 
 This operation will write a local file representing the terrain tile.
@@ -89,6 +90,33 @@ To define a water-mask you can use:
   >>> # Water only
   >>> watermask = [255]
   >>> tile = encode(geometries, bounds=bounds, watermask=watermask)
+
+If you have non-triangular geometries (typically when clipping in an existing mesh), 
+you can also use the option `autocorrectGeometries` to collapse them into triangles.
+This option should be used with care to fix punctual meshing mistakes.
+
+  >>> geometries = [
+          'POLYGON Z ((7.3828125 44.6484375 303.3, ' +
+                      '7.3828125 45.0 320.2, ' +
+                      '7.5585937 44.82421875 310.2, ' +
+                      '7.3828125 44.6484375 303.3))',
+          'POLYGON Z ((7.3828125 44.6484375 303.3, ' +
+                      '7.734375 44.6484375 350.3, ' +
+                      '7.5585937 44.82421875 310.2, ' +
+                      '7.3828125 44.6484375 303.3))',
+          'POLYGON Z ((7.734375 44.6484375 350.3, ' +
+                      '7.734375 45.0 330.3, ' +
+                      '7.5585937 44.82421875 310.2, ' +
+                      '7.734375 44.6484375 350.3))',
+          'POLYGON Z ((7.734375 45.0 330.3, ' +
+                      '7.5585937 44.82421875 310.2, ' +
+                      '7.3828125 45.0 320.2, ' +
+                      '7.55859375 45.0 325.2, ' +
+                      '7.734375 45.0 330.3))'
+      ] 
+  >>> tile = encode(geometries, bounds=bounds, autocorrectGeometries=True)
+  >>> print len(tile.getTrianglesCoordinates())
+
 
 Read a terrain tile
 -------------------
