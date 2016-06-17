@@ -9,7 +9,8 @@ from .terrain import TerrainTile
 from .topology import TerrainTopology
 
 
-def encode(geometries, bounds=[], watermask=[], hasLighting=False):
+def encode(geometries, bounds=[], autocorrectGeometries=False, hasLighting=False,
+           watermask=[]):
     """
     Function to convert geometries into a
     :class:`quantized_mesh_tile.terrain.TerrainTile` instance.
@@ -32,6 +33,13 @@ def encode(geometries, bounds=[], watermask=[], hasLighting=False):
 
         Default is `[]`.
 
+    ``autocorrectGeometries``
+
+        When set to `True`, it will attempt to fix geometries that are not
+        triangles. This often happens when geometries are clipped from an existing mesh.
+
+        Default is `False`.
+
     ``hasLighting``
 
         Indicate whether unit vectors should be computed for the lighting extension.
@@ -50,13 +58,16 @@ def encode(geometries, bounds=[], watermask=[], hasLighting=False):
         Default is `[]`.
 
     """
-    topology = TerrainTopology(geometries=geometries, hasLighting=hasLighting)
+    topology = TerrainTopology(geometries=geometries,
+                               autocorrectGeometries=autocorrectGeometries,
+                               hasLighting=hasLighting)
     if len(bounds) == 4:
         west, south, east, north = bounds
-        tile = TerrainTile(watermask=watermask,
-            west=west, south=south, east=east, north=north, topology=topology)
+        tile = TerrainTile(topology=topology,
+                           watermask=watermask,
+                           west=west, south=south, east=east, north=north)
     else:
-        tile = TerrainTile(watermask=watermask, topology=topology)
+        tile = TerrainTile(topology=topology, watermask=watermask)
     return tile
 
 
