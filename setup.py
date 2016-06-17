@@ -5,7 +5,7 @@ import multiprocessing
 from setuptools import setup, find_packages
 
 setup(name='quantized-mesh-tile',
-      version='0.1.1',
+      version='0.1alpha',
       description='Quantized-Mesh format reader and writer',
       author=u'Loic Gasser',
       author_email='loicgasser4@gmail.com',
