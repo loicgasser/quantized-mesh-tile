@@ -7,4 +7,4 @@ quantized-mesh-tile
 
 Quantized-mesh-tile is a Python encoder/decoder and topology builder for terrain tiles.
 
-
+Doc is hosted on Readthedocs: https://quantized-mesh-tile.readthedocs.io/en/latest/
