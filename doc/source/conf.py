@@ -338,3 +338,19 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
+
+# http://read-the-docs.readthedocs.io/en/latest/faq.html?highlight=mock
+# Mocks for read-the-docs
+import sys
+from mock import Mock as MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+
+MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb', 'shapely.geometry',
+                'shapely.geometry.base', 'shapely.geometry.polygon',
+                'numpy']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)

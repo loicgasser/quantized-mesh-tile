@@ -1,6 +1,7 @@
 nose
 flake8
 coveralls
+mock
 sphinx
 sphinx_rtd_theme
 sphinx-autobuild
