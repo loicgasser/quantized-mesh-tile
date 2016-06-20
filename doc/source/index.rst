@@ -22,8 +22,11 @@ Quantized mesh tile requires Python >=2.7 (not including Python 3.x) and GEOS >=
 Installation
 ------------
 
-Quantized mesh tile is available on the Python Package Index. So it can be installed
+Quantized mesh tile is available on the `Python Package Index`_. So it can be installed
 with pip and easy_install tools.
+
+.. _Python Package Index:
+    https://pypi.python.org/pypi/quantized-mesh-tile/
 
 Disclamer
 ---------
