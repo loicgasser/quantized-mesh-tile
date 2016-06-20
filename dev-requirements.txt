@@ -3,3 +3,4 @@ flake8
 coveralls
 sphinx
 sphinx_rtd_theme
+sphinx-autobuild
