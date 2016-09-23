@@ -103,17 +103,16 @@ def octEncode(vec):
     res[1] = int(toSnorm(res[1]))
     return res
 
-
 def octDecode(x, y):
     res = [x, y, 0.0]
     res[0] = fromSnorm(x)
     res[1] = fromSnorm(y)
-    res[2] = 1.0 - (abs(res[1]) - abs(res[1]))
+    res[2] = 1.0 - (abs(res[0]) + abs(res[1]))
 
     if res[2] < 0.0:
         oldX = res[0]
-        res[0] = (1.0 - abs(res[1]) * signNotZero(oldX))
-        res[1] = (1.0 - abs(oldX) * signNotZero(res[1]))
+        res[0] = (1.0 - abs(res[1])) * signNotZero(oldX)
+        res[1] = (1.0 - abs(oldX)) * signNotZero(res[1])
     return c3d.normalize(res)
 
 
@@ -154,9 +153,7 @@ def computeNormals(vertices, faces):
         normalA = np.cross(v1A, v2A)
         viewPointA = c3d.add(ctrd, normalA)
 
-        v1B = c3d.subtract(v0, v1)
-        v2B = c3d.subtract(v2, v1)
-        normalB = np.cross(v1B, v2B)
+        normalB = np.cross(v2A, v1A)
         viewPointB = c3d.add(ctrd, normalB)
 
         area = triangleArea(v0, v1)
@@ -172,10 +169,9 @@ def computeNormals(vertices, faces):
 
     for i in xrange(0, numFaces):
         face = faces[i]
+        weightedNormal = [c * areasPerFace[i] for c in normalsPerFace[i]]
         for j in face:
-            weightedNormal = [c * areasPerFace[i] for c in normalsPerFace[i]]
-            normalsPerVertex[j] = c3d.add(
-                normalsPerVertex[j], weightedNormal)
+            normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal)
 
     for i in xrange(0, numVertices):
         normalsPerVertex[i] = c3d.normalize(normalsPerVertex[i])
