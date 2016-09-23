@@ -387,9 +387,9 @@ class TerrainTile:
                     extensionLength = unpackEntry(f, meta['extensionLength'])
 
                     # Consider padding of 2 bits, no idea why?
-                    f.read(2)
+                    #f.read(2)
 
-                    for i in xrange(0, (extensionLength / 2) - 1):
+                    for i in xrange(0, (extensionLength / 2) ):
                         x = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                         y = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                         self.vLight.append(octDecode(x, y))
@@ -525,11 +525,11 @@ class TerrainTile:
             f.write(packEntry(meta['extensionLength'], 2 * vertexCount))
 
             # Add 2 bytes of padding
-            f.write(packEntry('B', 1))
-            f.write(packEntry('B', 1))
+            #f.write(packEntry('B', 1))
+            #f.write(packEntry('B', 1))
 
             metaV = TerrainTile.OctEncodedVertexNormals
-            for i in xrange(0, vertexCount - 1):
+            for i in xrange(0, vertexCount):
                 x, y = octEncode(self.vLight[i])
                 f.write(packEntry(metaV['xy'], x))
                 f.write(packEntry(metaV['xy'], y))
