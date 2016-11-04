@@ -8,6 +8,9 @@ import cartesian3d as c3d
 from struct import pack, unpack, calcsize
 
 
+EPSILON6 = 0.000001
+
+
 def packEntry(type, value):
     return pack('<%s' % type, value)
 
@@ -88,6 +91,8 @@ def fromSnorm(v):
 # Compress x, y, z 96-bit floating point into x, z 16-bit representation (2 snorm values)
 # https://github.com/AnalyticalGraphicsInc/cesium/blob/b161b6429b9201c99e5fb6f6e6283f3e8328b323/Source/Core/AttributeCompression.js#L43
 def octEncode(vec):
+    if abs(c3d.magnitudeSquared(vec) - 1.0) > EPSILON6:
+        raise ValueError('Only normalized vectors are supported')
     res = [0.0, 0.0]
     l1Norm = float(abs(vec[0]) + abs(vec[1]) + abs(vec[2]))
     res[0] = vec[0] / l1Norm
@@ -103,7 +108,10 @@ def octEncode(vec):
     res[1] = int(toSnorm(res[1]))
     return res
 
+
 def octDecode(x, y):
+    if x < 0 or x > 255 or y < 0 or y > 255:
+        raise ValueError('x and y must be signed and normalized between 0 and 255')
     res = [x, y, 0.0]
     res[0] = fromSnorm(x)
     res[1] = fromSnorm(y)
