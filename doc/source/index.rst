@@ -48,6 +48,7 @@ Contributors:
 
 * Loïc Gasser (https://github.com/loicgasser)
 * Gilbert Jeiziner (https://github.com/gjn)
+* Roland Arsenault (https://github.com/rolker)
 
 Styling:
 
