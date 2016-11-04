@@ -386,7 +386,8 @@ class TerrainTile:
                 if extensionId == 1:
                     extensionLength = unpackEntry(f, meta['extensionLength'])
 
-                    # Consider padding of 2 bits, no idea why?
+                    # Consider padding of 2 bits
+                    # http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
                     f.read(2)
 
                     for i in xrange(0, (extensionLength / 2) - 1):
