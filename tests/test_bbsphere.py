@@ -59,7 +59,8 @@ class TestBoundingSphere(unittest.TestCase):
         sphere = BoundingSphere()
         point = [[1.1, 3.2, 4.9]]
 
-        self.assertRaises(Exception, sphere.fromPoints(point))
+        with self.assertRaises(Exception):
+            sphere.fromPoints(point)
 
     def testBoundingSpherePrecision(self):
         x = 533
