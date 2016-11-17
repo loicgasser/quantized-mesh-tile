@@ -254,3 +254,33 @@ class TestTerrainTile(unittest.TestCase):
 
         fileLike = tile.toStringIO(gzipped=True)
         self.assertIsInstance(fileLike, cStringIO.OutputType)
+
+    def testFromStringIO(self):
+        z = 10
+        x = 1563
+        y = 590
+        geodetic = GlobalGeodetic(True)
+        [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+
+        # Regular file not gzip compressed
+        ter = TerrainTile()
+        ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+        with open('tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y)) as f:
+            content = cStringIO.StringIO(f.read())
+
+        ter.fromStringIO(content, hasLighting=True, hasWatermask=True)
+
+        # check indices
+        self.assertGreater(len(ter.indices), 0)
+
+        # check edges
+        self.assertGreater(len(ter.westI), 0)
+        self.assertGreater(len(ter.southI), 0)
+        self.assertGreater(len(ter.eastI), 0)
+        self.assertGreater(len(ter.northI), 0)
+
+        # check extensions
+        self.assertEqual(len(ter.watermask), 1)
+        self.assertEqual(len(ter.watermask[0]), 1)
+        # Water only -> 255
+        self.assertEqual(ter.watermask[0][0], 255)

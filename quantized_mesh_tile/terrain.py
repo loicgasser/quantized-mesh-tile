@@ -299,6 +299,112 @@ class TerrainTile:
                     )
                 )
 
+    def fromStringIO(self, f, hasLighting=False, hasWatermask=False):
+        """
+        A method to read a terrain tile content.
+
+        Arguments:
+
+        ``f``
+
+            An instance of cStringIO.StingIO containing the terrain data. (Required)
+
+        ``hasLighting``
+
+            Indicate if the tile contains lighting information. Default is ``False``.
+
+        ``hasWatermask``
+
+            Indicate if the tile contains watermask information. Default is ``False``.
+        """
+        self.hasLighting = hasLighting
+        self.hasWatermask = hasWatermask
+        # Header
+        for k, v in TerrainTile.quantizedMeshHeader.iteritems():
+            self.header[k] = unpackEntry(f, v)
+
+        # Delta decoding
+        ud = 0
+        vd = 0
+        hd = 0
+        # Vertices
+        vertexCount = unpackEntry(f, TerrainTile.vertexData['vertexCount'])
+        for i in xrange(0, vertexCount):
+            ud += zigZagDecode(
+                unpackEntry(f, TerrainTile.vertexData['uVertexCount'])
+            )
+            self.u.append(ud)
+        for i in xrange(0, vertexCount):
+            vd += zigZagDecode(
+                unpackEntry(f, TerrainTile.vertexData['vVertexCount'])
+            )
+            self.v.append(vd)
+        for i in xrange(0, vertexCount):
+            hd += zigZagDecode(
+                unpackEntry(f, TerrainTile.vertexData['heightVertexCount'])
+            )
+            self.h.append(hd)
+
+        # Indices
+        meta = TerrainTile.indexData16
+        if vertexCount > TerrainTile.BYTESPLIT:
+            meta = TerrainTile.indexData32
+        triangleCount = unpackEntry(f, meta['triangleCount'])
+        ind = unpackIndices(f, triangleCount * 3, meta['indices'])
+        self.indices = decodeIndices(ind)
+
+        meta = TerrainTile.EdgeIndices16
+        if vertexCount > TerrainTile.BYTESPLIT:
+            meta = TerrainTile.indexData32
+        # Edges (vertices on the edge of the tile)
+        # Indices (are the also high water mark encoded?)
+        westIndicesCount = unpackEntry(f, meta['westVertexCount'])
+        self.westI = unpackIndices(f, westIndicesCount, meta['westIndices'])
+
+        southIndicesCount = unpackEntry(f, meta['southVertexCount'])
+        self.southI = unpackIndices(f, southIndicesCount, meta['southIndices'])
+
+        eastIndicesCount = unpackEntry(f, meta['eastVertexCount'])
+        self.eastI = unpackIndices(f, eastIndicesCount, meta['eastIndices'])
+
+        northIndicesCount = unpackEntry(f, meta['northVertexCount'])
+        self.northI = unpackIndices(f, northIndicesCount, meta['northIndices'])
+
+        if self.hasLighting:
+            # One byte of padding
+            # Light extension header
+            meta = TerrainTile.ExtensionHeader
+            extensionId = unpackEntry(f, meta['extensionId'])
+            if extensionId == 1:
+                extensionLength = unpackEntry(f, meta['extensionLength'])
+
+                # Consider padding of 2 bits
+                # http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
+                f.read(2)
+
+                for i in xrange(0, (extensionLength / 2) - 1):
+                    x = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
+                    y = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
+                    self.vLight.append(octDecode(x, y))
+
+        if self.hasWatermask:
+            meta = TerrainTile.ExtensionHeader
+            extensionId = unpackEntry(f, meta['extensionId'])
+            if extensionId == 2:
+                extensionLength = unpackEntry(f, meta['extensionLength'])
+                row = []
+                for i in xrange(0, extensionLength):
+                    row.append(unpackEntry(f, TerrainTile.WaterMask['xy']))
+                    if len(row) == 256:
+                        self.watermask.append(row)
+                        row = []
+                if len(row) > 0:
+                    self.watermask.append(row)
+
+        data = f.read(1)
+        if data:
+            raise Exception('Should have reached end of file, but didn\'t')
+
     def fromFile(self, filePath, hasLighting=False, hasWatermask=False, gzipped=False):
         """
         A method to read a terrain tile file. It is assumed that the tile unzipped.
@@ -315,103 +421,16 @@ class TerrainTile:
 
         ``hasWatermask``
 
-            Indicate if the tile contains watermask information. Default is ``True``.
+            Indicate if the tile contains watermask information. Default is ``False``.
 
         ``gzipped``
 
             Indicate if the tile content is gzipped. Default is ``False``.
         """
-        self.hasLighting = hasLighting
-        self.hasWatermask = hasWatermask
         with open(filePath, 'rb') as f:
             if gzipped:
                 f = ungzipFileObject(f)
-
-            # Header
-            for k, v in TerrainTile.quantizedMeshHeader.iteritems():
-                self.header[k] = unpackEntry(f, v)
-
-            # Delta decoding
-            ud = 0
-            vd = 0
-            hd = 0
-            # Vertices
-            vertexCount = unpackEntry(f, TerrainTile.vertexData['vertexCount'])
-            for i in xrange(0, vertexCount):
-                ud += zigZagDecode(
-                    unpackEntry(f, TerrainTile.vertexData['uVertexCount'])
-                )
-                self.u.append(ud)
-            for i in xrange(0, vertexCount):
-                vd += zigZagDecode(
-                    unpackEntry(f, TerrainTile.vertexData['vVertexCount'])
-                )
-                self.v.append(vd)
-            for i in xrange(0, vertexCount):
-                hd += zigZagDecode(
-                    unpackEntry(f, TerrainTile.vertexData['heightVertexCount'])
-                )
-                self.h.append(hd)
-
-            # Indices
-            meta = TerrainTile.indexData16
-            if vertexCount > TerrainTile.BYTESPLIT:
-                meta = TerrainTile.indexData32
-            triangleCount = unpackEntry(f, meta['triangleCount'])
-            ind = unpackIndices(f, triangleCount * 3, meta['indices'])
-            self.indices = decodeIndices(ind)
-
-            meta = TerrainTile.EdgeIndices16
-            if vertexCount > TerrainTile.BYTESPLIT:
-                meta = TerrainTile.indexData32
-            # Edges (vertices on the edge of the tile)
-            # Indices (are the also high water mark encoded?)
-            westIndicesCount = unpackEntry(f, meta['westVertexCount'])
-            self.westI = unpackIndices(f, westIndicesCount, meta['westIndices'])
-
-            southIndicesCount = unpackEntry(f, meta['southVertexCount'])
-            self.southI = unpackIndices(f, southIndicesCount, meta['southIndices'])
-
-            eastIndicesCount = unpackEntry(f, meta['eastVertexCount'])
-            self.eastI = unpackIndices(f, eastIndicesCount, meta['eastIndices'])
-
-            northIndicesCount = unpackEntry(f, meta['northVertexCount'])
-            self.northI = unpackIndices(f, northIndicesCount, meta['northIndices'])
-
-            if self.hasLighting:
-                # One byte of padding
-                # Light extension header
-                meta = TerrainTile.ExtensionHeader
-                extensionId = unpackEntry(f, meta['extensionId'])
-                if extensionId == 1:
-                    extensionLength = unpackEntry(f, meta['extensionLength'])
-
-                    # Consider padding of 2 bits
-                    # http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
-                    f.read(2)
-
-                    for i in xrange(0, (extensionLength / 2) - 1):
-                        x = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
-                        y = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
-                        self.vLight.append(octDecode(x, y))
-
-            if self.hasWatermask:
-                meta = TerrainTile.ExtensionHeader
-                extensionId = unpackEntry(f, meta['extensionId'])
-                if extensionId == 2:
-                    extensionLength = unpackEntry(f, meta['extensionLength'])
-                    row = []
-                    for i in xrange(0, extensionLength):
-                        row.append(unpackEntry(f, TerrainTile.WaterMask['xy']))
-                        if len(row) == 256:
-                            self.watermask.append(row)
-                            row = []
-                    if len(row) > 0:
-                        self.watermask.append(row)
-
-            data = f.read(1)
-            if data:
-                raise Exception('Should have reached end of file, but didn\'t')
+            self.fromStringIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
 
     def toStringIO(self, gzipped=False):
         """
