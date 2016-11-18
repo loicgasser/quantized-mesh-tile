@@ -12,7 +12,7 @@ else:
     requires = ['shapely', 'numpy']
 
 setup(name='quantized-mesh-tile',
-      version='0.2alpha',
+      version='0.3alpha',
       description='Quantized-Mesh format reader and writer',
       author=u'Loic Gasser',
       author_email='loicgasser4@gmail.com',
