@@ -1,6 +1,7 @@
 *.pyc
 *.egg-info
 .venv
+venv
 *.swp
 dist/
 doc/build/
