@@ -128,7 +128,7 @@ extent of the tile.
   >>> geodetic = GlobalGeodetic(True)
   >>> [z, x, y] = [9, 533, 383]
   >>> [west, south, east, north] = bounds = geodetic.TileBounds(x, y, z)
-  >>> path = '%s/%s/%s.terrain' % (z, x, y)'
+  >>> path = '%s/%s/%s.terrain' % (z, x, y)
   >>> tile = decode(path, bounds)
   >>> print tile.getTrianglesCoordinates()
 
