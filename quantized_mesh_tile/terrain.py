@@ -556,7 +556,7 @@ class TerrainTile:
 
         if len(self.watermask) > 0:
             self.hasWatermask = True
-            # Extension header ID is 2 for lightening
+            # Extension header ID is 2 for watermark
             meta = TerrainTile.ExtensionHeader
             f.write(packEntry(meta['extensionId'], 2))
             # Extension header meta
