@@ -12,7 +12,7 @@ import io
 import numpy as np
 from . import cartesian3d as c3d
 from struct import pack, unpack, calcsize
-
+import sys
 
 EPSILON6 = 0.000001
 
@@ -194,8 +194,8 @@ def computeNormals(vertices, faces):
 
 
 def gzipFileObject(data):
-    compressed = io.StringIO()
-    gz = gzip.GzipFile(fileobj=compressed, mode='w', compresslevel=5)
+    compressed = io.BytesIO()
+    gz = gzip.GzipFile(fileobj=compressed, mode='wb', compresslevel=5)
     gz.write(data.getvalue())
     gz.close()
     compressed.seek(0)
@@ -203,7 +203,7 @@ def gzipFileObject(data):
 
 
 def ungzipFileObject(data):
-    buff = io.StringIO(data.read())
+    buff = io.BytesIO(data.read())
     f = gzip.GzipFile(fileobj=buff)
     return f
 

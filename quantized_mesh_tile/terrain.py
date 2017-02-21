@@ -308,7 +308,7 @@ class TerrainTile(object):
                     )
                 )
 
-    def fromStringIO(self, f, hasLighting=False, hasWatermask=False):
+    def from_BytesIO(self, f, hasLighting=False, hasWatermask=False):
         """
         A method to read a terrain tile content.
 
@@ -316,7 +316,7 @@ class TerrainTile(object):
 
         ``f``
 
-            An instance of cStringIO.StingIO containing the terrain data. (Required)
+            An instance of io.BytesIO containing the terrain data. (Required)
 
         ``hasLighting``
 
@@ -439,9 +439,9 @@ class TerrainTile(object):
         with open(filePath, 'rb') as f:
             if gzipped:
                 f = ungzipFileObject(f)
-            self.fromStringIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
+            self.from_BytesIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
 
-    def toStringIO(self, gzipped=False):
+    def to_BytesIO(self, gzipped=False):
         """
         A method to write the terrain tile data to a file-like object (a string buffer).
 
@@ -451,7 +451,7 @@ class TerrainTile(object):
 
             Indicate if the content should be gzipped. Default is ``False``.
         """
-        f = io.StringIO()
+        f = io.BytesIO()
         self._writeTo(f)
         if gzipped:
             f = gzipFileObject(f)

@@ -125,7 +125,7 @@ class TerrainTopology(object):
         """
         if isinstance(geometries, (list, tuple)) and len(geometries) > 0:
             for geometry in geometries:
-                if isinstance(geometry, (str, str)):
+                if isinstance(geometry, (str, bytes)):
                     geometry = self._loadGeometry(geometry)
                     vertices = self._extractVertices(geometry)
                 elif isinstance(geometry, BaseGeometry):
@@ -164,7 +164,7 @@ class TerrainTopology(object):
         """
         A private method to convert a (E)WKB or (E)WKT to a Shapely geometry.
         """
-        if geometrySpec.startswith('POLYGON Z'):
+        if type(geometrySpec) is str and geometrySpec.startswith('POLYGON Z'):
             try:
                 geometry = load_wkt(geometrySpec)
             except:
