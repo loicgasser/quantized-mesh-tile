@@ -2,16 +2,18 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from builtins import map
-from builtins import range
-from builtins import object
-from past.utils import old_div
+
 import math
+from builtins import map
+from builtins import object
+from builtins import range
+
+from past.utils import old_div
+
 from . import cartesian3d as c3d
 
 
 class BoundingSphere(object):
-
     def __init__(self, *args, **kwargs):
         MAX = float('infinity')
         MIN = float('-infinity')
@@ -104,9 +106,12 @@ class BoundingSphere(object):
                 # Calculate center of new Ritter sphere
                 oldToNew = oldCenterToPoint - ritterRadius
                 ritterCenter = [
-                    old_div((ritterRadius * ritterCenter[0] + oldToNew * currentP[0]), oldCenterToPoint),
-                    old_div((ritterRadius * ritterCenter[1] + oldToNew * currentP[1]), oldCenterToPoint),
-                    old_div((ritterRadius * ritterCenter[2] + oldToNew * currentP[2]), oldCenterToPoint)
+                    old_div((ritterRadius * ritterCenter[0] + oldToNew * currentP[0]),
+                            oldCenterToPoint),
+                    old_div((ritterRadius * ritterCenter[1] + oldToNew * currentP[1]),
+                            oldCenterToPoint),
+                    old_div((ritterRadius * ritterCenter[2] + oldToNew * currentP[2]),
+                            oldCenterToPoint)
                 ]
 
         # Keep the naive sphere if smaller

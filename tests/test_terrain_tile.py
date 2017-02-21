@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import range
 import os
@@ -12,7 +13,6 @@ from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
 
 class TestTerrainTile(unittest.TestCase):
-
     def setUp(self):
         self.tmpfile = 'tests/data/temp.terrain'
 
@@ -96,7 +96,7 @@ class TestTerrainTile(unittest.TestCase):
             self.assertEqual(v, ter2.northI[i], i)
 
         self.assertEqual(ter2.getContentType(),
-            'application/vnd.quantized-mesh')
+                         'application/vnd.quantized-mesh')
 
     def testWatermaskOnlyReader(self):
         z = 9
@@ -107,7 +107,7 @@ class TestTerrainTile(unittest.TestCase):
 
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile('tests/data/%s_%s_%s_watermask.terrain' % (z, x, y),
-            hasWatermask=True)
+                     hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), 256)
         for row in ter.watermask:
@@ -128,7 +128,7 @@ class TestTerrainTile(unittest.TestCase):
                 self.assertEqual(ter.watermask[i][j], ter2.watermask[i][j])
 
         self.assertEqual(ter2.getContentType(),
-            'application/vnd.quantized-mesh;extensions=watermask')
+                         'application/vnd.quantized-mesh;extensions=watermask')
 
     def testExtensionsReader(self):
         z = 10
@@ -162,7 +162,7 @@ class TestTerrainTile(unittest.TestCase):
 
         ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter2.fromFile(self.tmpfile,
-            hasLighting=True, hasWatermask=True)
+                      hasLighting=True, hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), len(ter2.watermask))
         self.assertEqual(len(ter.watermask[0]), len(ter2.watermask[0]))
@@ -176,8 +176,8 @@ class TestTerrainTile(unittest.TestCase):
                 self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
 
         self.assertEqual(ter2.getContentType(),
-            'application/vnd.quantized-mesh;' +
-            'extensions=octvertexnormals-watermask')
+                         'application/vnd.quantized-mesh;' +
+                         'extensions=octvertexnormals-watermask')
 
     def testExtentionsReaderWriterGzipped(self):
         z = 10
