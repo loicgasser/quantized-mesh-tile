@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+from past.utils import old_div
 import math
 
 # Constants taken from http://cesiumjs.org/2013/04/25/Horizon-culling/
@@ -19,10 +21,10 @@ wgs84_b2 = wgs84_b ** 2
 
 
 def LLH2ECEF(lon, lat, alt):
-    lat *= (math.pi / 180.0)
-    lon *= (math.pi / 180.0)
+    lat *= (old_div(math.pi, 180.0))
+    lon *= (old_div(math.pi, 180.0))
 
-    n = lambda x: wgs84_a / math.sqrt(1 - wgs84_e2 * (math.sin(x) ** 2))
+    n = lambda x: old_div(wgs84_a, math.sqrt(1 - wgs84_e2 * (math.sin(x) ** 2)))
 
     x = (n(lat) + alt) * math.cos(lat) * math.cos(lon)
     y = (n(lat) + alt) * math.cos(lat) * math.sin(lon)
@@ -34,7 +36,7 @@ def LLH2ECEF(lon, lat, alt):
 
 
 def ECEF2LLH(x, y, z):
-    ep = math.sqrt((wgs84_a2 - wgs84_b2) / wgs84_b2)
+    ep = math.sqrt(old_div((wgs84_a2 - wgs84_b2), wgs84_b2))
     p = math.sqrt(x ** 2 + y ** 2)
     th = math.atan2(wgs84_a * z, wgs84_b * p)
     lon = math.atan2(y, x)
@@ -42,10 +44,10 @@ def ECEF2LLH(x, y, z):
         z + ep ** 2 * wgs84_b * math.sin(th) ** 3,
         p - wgs84_e2 * wgs84_a * math.cos(th) ** 3
     )
-    N = wgs84_a / math.sqrt(1 - wgs84_e2 * math.sin(lat) ** 2)
-    alt = p / math.cos(lat) - N
+    N = old_div(wgs84_a, math.sqrt(1 - wgs84_e2 * math.sin(lat) ** 2))
+    alt = old_div(p, math.cos(lat)) - N
 
-    lon *= (180. / math.pi)
-    lat *= (180. / math.pi)
+    lon *= (old_div(180., math.pi))
+    lat *= (old_div(180., math.pi))
 
     return [lon, lat, alt]

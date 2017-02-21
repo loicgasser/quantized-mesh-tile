@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import os
 import unittest
-import cStringIO
+import io
 from quantized_mesh_tile.terrain import TerrainTile
 from quantized_mesh_tile.topology import TerrainTopology
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
@@ -44,7 +47,7 @@ class TestTerrainTile(unittest.TestCase):
         self.assertGreater(len(ter.header), 0)
         self.assertEqual(len(ter.header), len(ter2.header))
         self.assertEqual(len(ter.header), len(TerrainTile.quantizedMeshHeader))
-        for k, v in ter.header.iteritems():
+        for k, v in ter.header.items():
             self.assertEqual(v, ter2.header[k], 'For k = ' + k)
 
         # check vertices
@@ -236,7 +239,7 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._north, 1.0)
 
         fileLike = tile.toStringIO()
-        self.assertIsInstance(fileLike, cStringIO.OutputType)
+        self.assertIsInstance(fileLike, io.OutputType)
 
     def testGzippedTileCreationFromTopology(self):
         wkts = [
@@ -253,7 +256,7 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._north, 1.0)
 
         fileLike = tile.toStringIO(gzipped=True)
-        self.assertIsInstance(fileLike, cStringIO.OutputType)
+        self.assertIsInstance(fileLike, io.OutputType)
 
     def testFromStringIO(self):
         z = 10
@@ -266,7 +269,7 @@ class TestTerrainTile(unittest.TestCase):
         ter = TerrainTile()
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         with open('tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y)) as f:
-            content = cStringIO.StringIO(f.read())
+            content = io.StringIO(f.read())
 
         ter.fromStringIO(content, hasLighting=True, hasWatermask=True)
 

@@ -3,8 +3,11 @@
 Reference
 ---------
 """
+from __future__ import division
 
 
+from builtins import object
+from past.utils import old_div
 import math
 import numpy as np
 from .llh_ecef import LLH2ECEF
@@ -15,7 +18,7 @@ from shapely.wkb import loads as load_wkb
 from shapely.wkt import loads as load_wkt
 
 
-class TerrainTopology:
+class TerrainTopology(object):
     """
     This class is used to build the terrain tile topology.
 
@@ -102,7 +105,7 @@ class TerrainTopology:
         msg += '\n%s' % len(self.indexData)
         msg += '\nindexData list:'
         msg += '\n%s' % self.indexData
-        msg += '\nNumber of triangles: %s' % (len(self.indexData) / 3)
+        msg += '\nNumber of triangles: %s' % (old_div(len(self.indexData), 3))
         return msg
 
     def addGeometries(self, geometries):
@@ -122,7 +125,7 @@ class TerrainTopology:
         """
         if isinstance(geometries, (list, tuple)) and len(geometries) > 0:
             for geometry in geometries:
-                if isinstance(geometry, (unicode, str)):
+                if isinstance(geometry, (str, str)):
                     geometry = self._loadGeometry(geometry)
                     vertices = self._extractVertices(geometry)
                 elif isinstance(geometry, BaseGeometry):
@@ -234,8 +237,8 @@ class TerrainTopology:
         http://stackoverflow.com/questions/1709283/\
         how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
         """
-        mlat = sum(coord[0] for coord in vertices) / float(len(vertices))
-        mlon = sum(coord[1] for coord in vertices) / float(len(vertices))
+        mlat = old_div(sum(coord[0] for coord in vertices), float(len(vertices)))
+        mlon = old_div(sum(coord[1] for coord in vertices), float(len(vertices)))
 
         def algo(coord):
             return (math.atan2(coord[0] - mlat, coord[1] - mlon) + 2 * math.pi) % (

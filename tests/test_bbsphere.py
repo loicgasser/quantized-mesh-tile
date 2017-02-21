@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from builtins import map
 import unittest
 import quantized_mesh_tile.cartesian3d as c3d
 from quantized_mesh_tile.terrain import TerrainTile
@@ -74,7 +75,7 @@ class TestBoundingSphere(unittest.TestCase):
 
         llh2ecef = lambda x: LLH2ECEF(x[0], x[1], x[2])
         coords = ter.getVerticesCoordinates()
-        coords = map(llh2ecef, coords)
+        coords = list(map(llh2ecef, coords))
         sphere = BoundingSphere()
         sphere.fromPoints(coords)
         for coord in coords:
