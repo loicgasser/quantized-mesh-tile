@@ -6,7 +6,7 @@ from __future__ import division
 import math
 from builtins import map
 from builtins import object
-from builtins import range
+from past.builtins import xrange
 
 from past.utils import old_div
 
@@ -33,7 +33,7 @@ class BoundingSphere(object):
             raise Exception('Your list of points must contain at least 2 points')
 
         nbPositions = len(points)
-        for i in range(0, nbPositions):
+        for i in xrange(0, nbPositions):
             point = points[i]
 
             # Store the points containing the smallest and largest component
@@ -88,7 +88,7 @@ class BoundingSphere(object):
         naiveCenter = c3d.multiplyByScalar(c3d.add(minBoxPt, maxBoxPt), 0.5)
         naiveRadius = 0.0
 
-        for i in range(0, nbPositions):
+        for i in xrange(0, nbPositions):
             currentP = points[i]
 
             # Find the furthest point from the naive center to calculate the naive radius.

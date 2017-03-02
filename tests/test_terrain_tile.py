@@ -238,7 +238,7 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
 
-        fileLike = tile.to_BytesIO()
+        fileLike = tile.toBytesIO()
         self.assertIsInstance(fileLike, io.BytesIO)
 
     def testGzippedTileCreationFromTopology(self):
@@ -255,10 +255,10 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
 
-        fileLike = tile.to_BytesIO(gzipped=True)
+        fileLike = tile.toBytesIO(gzipped=True)
         self.assertIsInstance(fileLike, io.BytesIO)
 
-    def test_from_BytesIO(self):
+    def test_fromBytesIO(self):
         z = 10
         x = 1563
         y = 590
@@ -271,7 +271,7 @@ class TestTerrainTile(unittest.TestCase):
         with open('tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y), 'rb') as f:
             content = io.BytesIO(f.read())
 
-        ter.from_BytesIO(content, hasLighting=True, hasWatermask=True)
+        ter.fromBytesIO(content, hasLighting=True, hasWatermask=True)
 
         # check indices
         self.assertGreater(len(ter.indices), 0)

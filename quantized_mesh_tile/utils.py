@@ -5,7 +5,7 @@ from __future__ import division
 from future import standard_library
 
 standard_library.install_aliases()
-from builtins import range
+from past.builtins import xrange
 from past.utils import old_div
 import math
 import gzip
@@ -32,7 +32,7 @@ def packIndices(f, type, indices):
 
 def unpackIndices(f, indicesCount, indicesType):
     indices = []
-    for i in range(0, indicesCount):
+    for i in xrange(0, indicesCount):
         indices.append(
             unpackEntry(f, indicesType)
         )
@@ -155,7 +155,7 @@ def computeNormals(vertices, faces):
     areasPerFace = [0.0] * numFaces
     normalsPerVertex = np.zeros(vertices.shape, dtype=vertices.dtype)
 
-    for i in range(0, numFaces):
+    for i in xrange(0, numFaces):
         face = faces[i]
         v0 = vertices[face[0]]
         v1 = vertices[face[1]]
@@ -181,13 +181,13 @@ def computeNormals(vertices, faces):
         else:
             normalsPerFace[i] = normalB
 
-    for i in range(0, numFaces):
+    for i in xrange(0, numFaces):
         face = faces[i]
         weightedNormal = [c * areasPerFace[i] for c in normalsPerFace[i]]
         for j in face:
             normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal)
 
-    for i in range(0, numVertices):
+    for i in xrange(0, numVertices):
         normalsPerVertex[i] = c3d.normalize(normalsPerVertex[i])
 
     return normalsPerVertex
@@ -215,7 +215,7 @@ def getCoordsIndex(n, i):
 # Creates all the potential pairs of coords
 def createCoordsPairs(l):
     coordsPairs = []
-    for i in range(0, len(l)):
+    for i in xrange(0, len(l)):
         coordsPairs.append([l[i], l[(i + 2) % len(l)]])
     return coordsPairs
 

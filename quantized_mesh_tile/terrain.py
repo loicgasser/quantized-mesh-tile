@@ -13,7 +13,7 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import next
 from builtins import map
-from builtins import range
+from past.builtins import xrange
 from builtins import object
 from past.utils import old_div
 import os
@@ -271,7 +271,7 @@ class TerrainTile(object):
         triangles = []
         self._computeVerticesCoordinates()
         indices = iter(self.indices)
-        for i in range(0, len(self.indices) - 1, 3):
+        for i in xrange(0, len(self.indices) - 1, 3):
             vi1 = next(indices)
             vi2 = next(indices)
             vi3 = next(indices)
@@ -309,7 +309,7 @@ class TerrainTile(object):
                     )
                 )
 
-    def from_BytesIO(self, f, hasLighting=False, hasWatermask=False):
+    def fromBytesIO(self, f, hasLighting=False, hasWatermask=False):
         """
         A method to read a terrain tile content.
 
@@ -339,17 +339,17 @@ class TerrainTile(object):
         hd = 0
         # Vertices
         vertexCount = unpackEntry(f, TerrainTile.vertexData['vertexCount'])
-        for i in range(0, vertexCount):
+        for i in xrange(0, vertexCount):
             ud += zigZagDecode(
                 unpackEntry(f, TerrainTile.vertexData['uVertexCount'])
             )
             self.u.append(ud)
-        for i in range(0, vertexCount):
+        for i in xrange(0, vertexCount):
             vd += zigZagDecode(
                 unpackEntry(f, TerrainTile.vertexData['vVertexCount'])
             )
             self.v.append(vd)
-        for i in range(0, vertexCount):
+        for i in xrange(0, vertexCount):
             hd += zigZagDecode(
                 unpackEntry(f, TerrainTile.vertexData['heightVertexCount'])
             )
@@ -440,9 +440,9 @@ class TerrainTile(object):
         with open(filePath, 'rb') as f:
             if gzipped:
                 f = ungzipFileObject(f)
-            self.from_BytesIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
+            self.fromBytesIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
 
-    def to_BytesIO(self, gzipped=False):
+    def toBytesIO(self, gzipped=False):
         """
         A method to write the terrain tile data to a file-like object (a string buffer).
 
