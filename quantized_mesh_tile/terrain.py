@@ -498,19 +498,19 @@ class TerrainTile(object):
         f.write(
             packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.u[0]))
         )
-        for i in range(0, vertexCount - 1):
+        for i in xrange(0, vertexCount - 1):
             ud = self.u[i + 1] - self.u[i]
             f.write(packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(ud)))
         f.write(
             packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.v[0]))
         )
-        for i in range(0, vertexCount - 1):
+        for i in xrange(0, vertexCount - 1):
             vd = self.v[i + 1] - self.v[i]
             f.write(packEntry(TerrainTile.vertexData['vVertexCount'], zigZagEncode(vd)))
         f.write(
             packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.h[0]))
         )
-        for i in range(0, vertexCount - 1):
+        for i in xrange(0, vertexCount - 1):
             hd = self.h[i + 1] - self.h[i]
             f.write(
                 packEntry(TerrainTile.vertexData['heightVertexCount'], zigZagEncode(hd))
@@ -559,7 +559,7 @@ class TerrainTile(object):
             f.write(packEntry('B', 1))
 
             metaV = TerrainTile.OctEncodedVertexNormals
-            for i in range(0, vertexCount - 1):
+            for i in xrange(0, vertexCount - 1):
                 x, y = octEncode(self.vLight[i])
                 f.write(packEntry(metaV['xy'], x))
                 f.write(packEntry(metaV['xy'], y))
@@ -579,7 +579,7 @@ class TerrainTile(object):
                         'Unexpected number of rows for the watermask: %s' % nbRows
                     )
                 # From North to South
-                for i in range(0, nbRows):
+                for i in xrange(0, nbRows):
                     x = self.watermask[i]
                     if len(x) != 256:
                         raise Exception(
