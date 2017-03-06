@@ -36,7 +36,7 @@ This library is only at a very early stage (very first version) and is subject t
 Known issue
 -----------
 
-This library can read and write tiles with the lighting extension header, but still fail to create correct unit 
+This library can read and write tiles with the lighting extension header, but still fail to create correct unit
 vectors from scratch. PRs are welcome though!
 
 Development
@@ -49,6 +49,7 @@ Contributors:
 * Loïc Gasser (https://github.com/loicgasser)
 * Gilbert Jeiziner (https://github.com/gjn)
 * Roland Arsenault (https://github.com/rolker)
+* Ulrich Meier (https://github.com/umeier)
 
 Styling:
 
