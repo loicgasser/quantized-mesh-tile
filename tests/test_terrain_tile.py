@@ -258,7 +258,7 @@ class TestTerrainTile(unittest.TestCase):
         fileLike = tile.toBytesIO(gzipped=True)
         self.assertIsInstance(fileLike, io.BytesIO)
 
-    def test_fromBytesIO(self):
+    def testFromBytesIO(self):
         z = 10
         x = 1563
         y = 590
