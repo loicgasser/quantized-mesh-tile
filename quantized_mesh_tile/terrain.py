@@ -5,12 +5,22 @@ http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
 Reference
 ---------
 """
+from __future__ import absolute_import
+from __future__ import division
 
+from future import standard_library
+
+standard_library.install_aliases()
+from builtins import next
+from builtins import map
+from past.builtins import xrange
+from builtins import object
+from past.utils import old_div
 import os
 import gzip
-import cStringIO
+import io
 from collections import OrderedDict
-import horizon_occlusion_point as occ
+from . import horizon_occlusion_point as occ
 from .utils import (
     octEncode, octDecode, zigZagDecode, zigZagEncode,
     gzipFileObject, ungzipFileObject, unpackEntry, unpackIndices,
@@ -28,7 +38,7 @@ def lerp(p, q, time):
     return ((1.0 - time) * p) + (time * q)
 
 
-class TerrainTile:
+class TerrainTile(object):
     """
     The main class to read and write a terrain tile.
 
@@ -190,7 +200,7 @@ class TerrainTile:
         self.hasWatermask = kwargs.get('hasWatermask', bool(len(self.watermask) > 0))
 
         self.header = OrderedDict()
-        for k, v in TerrainTile.quantizedMeshHeader.iteritems():
+        for k, v in TerrainTile.quantizedMeshHeader.items():
             self.header[k] = 0.0
         self.u = []
         self.v = []
@@ -223,7 +233,7 @@ class TerrainTile:
         msg += '\nnorthIndicesCount: %s' % len(self.northI)
         msg += '\nnorthIndices: %s\n' % self.northI
         # Output coordinates
-        msg += '\nNumber of triangles: %s' % (len(self.indices) / 3)
+        msg += '\nNumber of triangles: %s' % (old_div(len(self.indices), 3))
         msg += '\nTriangles coordinates in EPSG %s' % self.EPSG
         msg += '\n%s' % self.getTrianglesCoordinates()
 
@@ -261,10 +271,10 @@ class TerrainTile:
         triangles = []
         self._computeVerticesCoordinates()
         indices = iter(self.indices)
-        for i in range(0, len(self.indices) - 1, 3):
-            vi1 = indices.next()
-            vi2 = indices.next()
-            vi3 = indices.next()
+        for i in xrange(0, len(self.indices) - 1, 3):
+            vi1 = next(indices)
+            vi2 = next(indices)
+            vi3 = next(indices)
             triangle = (
                 (self._longs[vi1],
                  self._lats[vi1],
@@ -287,19 +297,19 @@ class TerrainTile:
         """
         if len(self._longs) == 0:
             for u in self.u:
-                self._longs.append(lerp(self._west, self._east, float(u) / MAX))
+                self._longs.append(lerp(self._west, self._east, old_div(float(u), MAX)))
             for v in self.v:
-                self._lats.append(lerp(self._south, self._north, float(v) / MAX))
+                self._lats.append(lerp(self._south, self._north, old_div(float(v), MAX)))
             for h in self.h:
                 self._heights.append(
                     lerp(
                         self.header['minimumHeight'],
                         self.header['maximumHeight'],
-                        float(h) / MAX
+                        old_div(float(h), MAX)
                     )
                 )
 
-    def fromStringIO(self, f, hasLighting=False, hasWatermask=False):
+    def fromBytesIO(self, f, hasLighting=False, hasWatermask=False):
         """
         A method to read a terrain tile content.
 
@@ -307,7 +317,7 @@ class TerrainTile:
 
         ``f``
 
-            An instance of cStringIO.StingIO containing the terrain data. (Required)
+            An instance of io.BytesIO containing the terrain data. (Required)
 
         ``hasLighting``
 
@@ -320,7 +330,7 @@ class TerrainTile:
         self.hasLighting = hasLighting
         self.hasWatermask = hasWatermask
         # Header
-        for k, v in TerrainTile.quantizedMeshHeader.iteritems():
+        for k, v in TerrainTile.quantizedMeshHeader.items():
             self.header[k] = unpackEntry(f, v)
 
         # Delta decoding
@@ -382,7 +392,7 @@ class TerrainTile:
                 # http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
                 f.read(2)
 
-                for i in xrange(0, (extensionLength / 2) - 1):
+                for i in range(0, (old_div(extensionLength, 2)) - 1):
                     x = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                     y = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                     self.vLight.append(octDecode(x, y))
@@ -393,7 +403,7 @@ class TerrainTile:
             if extensionId == 2:
                 extensionLength = unpackEntry(f, meta['extensionLength'])
                 row = []
-                for i in xrange(0, extensionLength):
+                for i in range(0, extensionLength):
                     row.append(unpackEntry(f, TerrainTile.WaterMask['xy']))
                     if len(row) == 256:
                         self.watermask.append(row)
@@ -430,9 +440,9 @@ class TerrainTile:
         with open(filePath, 'rb') as f:
             if gzipped:
                 f = ungzipFileObject(f)
-            self.fromStringIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
+            self.fromBytesIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
 
-    def toStringIO(self, gzipped=False):
+    def toBytesIO(self, gzipped=False):
         """
         A method to write the terrain tile data to a file-like object (a string buffer).
 
@@ -442,7 +452,7 @@ class TerrainTile:
 
             Indicate if the content should be gzipped. Default is ``False``.
         """
-        f = cStringIO.StringIO()
+        f = io.BytesIO()
         self._writeTo(f)
         if gzipped:
             f = gzipFileObject(f)
@@ -477,7 +487,7 @@ class TerrainTile:
         A private method to write the terrain tile to a file or file-like object.
         """
         # Header
-        for k, v in TerrainTile.quantizedMeshHeader.iteritems():
+        for k, v in TerrainTile.quantizedMeshHeader.items():
             f.write(packEntry(v, self.header[k]))
 
         # Delta decoding
@@ -511,7 +521,7 @@ class TerrainTile:
         if vertexCount > TerrainTile.BYTESPLIT:
             meta = TerrainTile.indexData32
 
-        f.write(packEntry(meta['triangleCount'], len(self.indices) / 3))
+        f.write(packEntry(meta['triangleCount'], old_div(len(self.indices), 3)))
         ind = encodeIndices(self.indices)
         packIndices(f, meta['indices'], ind)
 
@@ -643,7 +653,7 @@ class TerrainTile:
 
         occlusionPCoords = occ.fromPoints(topology.cartesianVertices, bSphere)
 
-        for k, v in TerrainTile.quantizedMeshHeader.iteritems():
+        for k, v in TerrainTile.quantizedMeshHeader.items():
             if k == 'centerX':
                 self.header[k] = centerCoords[0]
             elif k == 'centerY':
@@ -669,8 +679,8 @@ class TerrainTile:
             elif k == 'horizonOcclusionPointZ':
                 self.header[k] = occlusionPCoords[2]
 
-        bLon = MAX / (self._east - self._west)
-        bLat = MAX / (self._north - self._south)
+        bLon = old_div(MAX, (self._east - self._west))
+        bLat = old_div(MAX, (self._north - self._south))
 
         quantizeLonIndices = lambda x: int(round((x - self._west) * bLon))
         quantizeLatIndices = lambda x: int(round((x - self._south) * bLat))
@@ -680,20 +690,20 @@ class TerrainTile:
         if deniv == 0:
             quantizeHeightIndices = lambda x: 0
         else:
-            bHeight = MAX / deniv
+            bHeight = old_div(MAX, deniv)
             quantizeHeightIndices = lambda x: int(
                 round((x - self.header['minimumHeight']) * bHeight)
             )
 
         # High watermark encoding performed during toFile
-        self.u = map(quantizeLonIndices, topology.uVertex)
-        self.v = map(quantizeLatIndices, topology.vVertex)
-        self.h = map(quantizeHeightIndices, topology.hVertex)
+        self.u = list(map(quantizeLonIndices, topology.uVertex))
+        self.v = list(map(quantizeLatIndices, topology.vVertex))
+        self.h = list(map(quantizeHeightIndices, topology.hVertex))
         self.indices = topology.indexData
 
         # List all the vertices on the edge of the tile
         # High water mark encoded?
-        for i in xrange(0, len(self.indices)):
+        for i in range(0, len(self.indices)):
             # Use original coordinates
             indice = self.indices[i]
             lon = topology.uVertex[indice]

@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from future import standard_library
+
+standard_library.install_aliases()
+from builtins import range
 import os
 import unittest
-import cStringIO
+import io
 from quantized_mesh_tile.terrain import TerrainTile
 from quantized_mesh_tile.topology import TerrainTopology
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
 
 class TestTerrainTile(unittest.TestCase):
-
     def setUp(self):
         self.tmpfile = 'tests/data/temp.terrain'
 
@@ -44,7 +47,7 @@ class TestTerrainTile(unittest.TestCase):
         self.assertGreater(len(ter.header), 0)
         self.assertEqual(len(ter.header), len(ter2.header))
         self.assertEqual(len(ter.header), len(TerrainTile.quantizedMeshHeader))
-        for k, v in ter.header.iteritems():
+        for k, v in ter.header.items():
             self.assertEqual(v, ter2.header[k], 'For k = ' + k)
 
         # check vertices
@@ -93,7 +96,7 @@ class TestTerrainTile(unittest.TestCase):
             self.assertEqual(v, ter2.northI[i], i)
 
         self.assertEqual(ter2.getContentType(),
-            'application/vnd.quantized-mesh')
+                         'application/vnd.quantized-mesh')
 
     def testWatermaskOnlyReader(self):
         z = 9
@@ -104,7 +107,7 @@ class TestTerrainTile(unittest.TestCase):
 
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile('tests/data/%s_%s_%s_watermask.terrain' % (z, x, y),
-            hasWatermask=True)
+                     hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), 256)
         for row in ter.watermask:
@@ -125,7 +128,7 @@ class TestTerrainTile(unittest.TestCase):
                 self.assertEqual(ter.watermask[i][j], ter2.watermask[i][j])
 
         self.assertEqual(ter2.getContentType(),
-            'application/vnd.quantized-mesh;extensions=watermask')
+                         'application/vnd.quantized-mesh;extensions=watermask')
 
     def testExtensionsReader(self):
         z = 10
@@ -159,7 +162,7 @@ class TestTerrainTile(unittest.TestCase):
 
         ter2 = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter2.fromFile(self.tmpfile,
-            hasLighting=True, hasWatermask=True)
+                      hasLighting=True, hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), len(ter2.watermask))
         self.assertEqual(len(ter.watermask[0]), len(ter2.watermask[0]))
@@ -173,8 +176,8 @@ class TestTerrainTile(unittest.TestCase):
                 self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
 
         self.assertEqual(ter2.getContentType(),
-            'application/vnd.quantized-mesh;' +
-            'extensions=octvertexnormals-watermask')
+                         'application/vnd.quantized-mesh;' +
+                         'extensions=octvertexnormals-watermask')
 
     def testExtentionsReaderWriterGzipped(self):
         z = 10
@@ -235,8 +238,8 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
 
-        fileLike = tile.toStringIO()
-        self.assertIsInstance(fileLike, cStringIO.OutputType)
+        fileLike = tile.toBytesIO()
+        self.assertIsInstance(fileLike, io.BytesIO)
 
     def testGzippedTileCreationFromTopology(self):
         wkts = [
@@ -252,10 +255,10 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
 
-        fileLike = tile.toStringIO(gzipped=True)
-        self.assertIsInstance(fileLike, cStringIO.OutputType)
+        fileLike = tile.toBytesIO(gzipped=True)
+        self.assertIsInstance(fileLike, io.BytesIO)
 
-    def testFromStringIO(self):
+    def test_fromBytesIO(self):
         z = 10
         x = 1563
         y = 590
@@ -265,10 +268,10 @@ class TestTerrainTile(unittest.TestCase):
         # Regular file not gzip compressed
         ter = TerrainTile()
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        with open('tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y)) as f:
-            content = cStringIO.StringIO(f.read())
+        with open('tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y), 'rb') as f:
+            content = io.BytesIO(f.read())
 
-        ter.fromStringIO(content, hasLighting=True, hasWatermask=True)
+        ter.fromBytesIO(content, hasLighting=True, hasWatermask=True)
 
         # check indices
         self.assertGreater(len(ter.indices), 0)

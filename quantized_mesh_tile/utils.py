@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from __future__ import division
+from future import standard_library
+
+standard_library.install_aliases()
+from past.builtins import xrange
+from past.utils import old_div
 import math
 import gzip
-import cStringIO
+import io
 import numpy as np
-import cartesian3d as c3d
+from . import cartesian3d as c3d
 from struct import pack, unpack, calcsize
-
 
 EPSILON6 = 0.000001
 
@@ -95,8 +101,8 @@ def octEncode(vec):
         raise ValueError('Only normalized vectors are supported')
     res = [0.0, 0.0]
     l1Norm = float(abs(vec[0]) + abs(vec[1]) + abs(vec[2]))
-    res[0] = vec[0] / l1Norm
-    res[1] = vec[1] / l1Norm
+    res[0] = old_div(vec[0], l1Norm)
+    res[1] = old_div(vec[1], l1Norm)
 
     if vec[2] < 0.0:
         x = res[0]
@@ -125,9 +131,9 @@ def octDecode(x, y):
 
 
 def centroid(a, b, c):
-    return [sum((a[0], b[0], c[0])) / 3,
-            sum((a[1], b[1], c[1])) / 3,
-            sum([a[2], b[2], c[2]]) / 3]
+    return [old_div(sum((a[0], b[0], c[0])), 3),
+            old_div(sum((a[1], b[1], c[1])), 3),
+            old_div(sum([a[2], b[2], c[2]]), 3)]
 
 
 # Based on the vectors defining the plan
@@ -188,8 +194,8 @@ def computeNormals(vertices, faces):
 
 
 def gzipFileObject(data):
-    compressed = cStringIO.StringIO()
-    gz = gzip.GzipFile(fileobj=compressed, mode='w', compresslevel=5)
+    compressed = io.BytesIO()
+    gz = gzip.GzipFile(fileobj=compressed, mode='wb', compresslevel=5)
     gz.write(data.getvalue())
     gz.close()
     compressed.seek(0)
@@ -197,7 +203,7 @@ def gzipFileObject(data):
 
 
 def ungzipFileObject(data):
-    buff = cStringIO.StringIO(data.read())
+    buff = io.BytesIO(data.read())
     f = gzip.GzipFile(fileobj=buff)
     return f
 
