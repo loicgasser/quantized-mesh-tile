@@ -9,6 +9,13 @@ from .terrain import TerrainTile
 from .topology import TerrainTopology
 
 
+# Enable Shapely "speedups" if available
+# http://toblerity.org/shapely/manual.html#performance
+from shapely import speedups
+if speedups.available:
+    speedups.enable()
+
+
 def encode(geometries, bounds=[], autocorrectGeometries=False, hasLighting=False,
            watermask=[]):
     """

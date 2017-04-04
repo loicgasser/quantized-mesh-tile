@@ -81,9 +81,9 @@ This operation will write a local file representing the terrain tile.
 If you don't want to create a physical file but only need its content, you can use:
 
   >>> tile = encode(geometries, bounds=bounds)
-  >>> content = tile.toStringIO(gzipped=True)
+  >>> content = tile.toBytesIO(gzipped=True)
 
-This operation will create a gzipped compressed string buffer wrapped in a `cStringIO.StringIO` instance.
+This operation will create a gzipped compressed string buffer wrapped in a `io.BytesIO` instance.
 
 To define a water-mask you can use:
 
@@ -147,7 +147,7 @@ Using the `requests module`_, here is an example on how to read a remote terrain
 The you won't need to decompress the gzipped tile has this is performed automatically
 in the requests module.
 
-  >>> import cStringIO
+  >>> from io import BytesIO
   >>> import requests
   >>> from quantized_mesh_tile.terrain import TerrainTile
   >>> from quantized_mesh_tile.global_geodetic import GlobalGeodetic
@@ -156,7 +156,7 @@ in the requests module.
   >>> [west, south, east, north] = bounds = geodetic.TileBounds(x, y, z)
   >>> url = 'http://assets.agi.com/stk-terrain/world/%s/%s/%s.terrain?v=1.16389.0' % (z, x, y)
   >>> response = requests.get(url)
-  >>> content = cStringIO.StringIO(response.content)
+  >>> content = BytesIO(response.content)
   >>> ter = TerrainTile(west=west, south=south, east=east, north=north)
-  >>> ter.fromStringIO(content)
+  >>> ter.fromBytesIO(content)
   >>> print ter.getVerticesCoordinates()
