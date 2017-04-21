@@ -4,5 +4,6 @@
 venv
 *.swp
 dist/
+build/
 doc/build/
 .idea/
