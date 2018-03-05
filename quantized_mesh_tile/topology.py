@@ -167,12 +167,12 @@ class TerrainTopology(object):
         if type(geometrySpec) is str and geometrySpec.startswith('POLYGON Z'):
             try:
                 geometry = load_wkt(geometrySpec)
-            except:
+            except Exception:
                 geometry = None
         else:
             try:
                 geometry = load_wkb(geometrySpec)
-            except:
+            except Exception:
                 geometry = None
 
         if geometry is None:
