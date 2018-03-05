@@ -388,11 +388,7 @@ class TerrainTile(object):
             if extensionId == 1:
                 extensionLength = unpackEntry(f, meta['extensionLength'])
 
-                # Consider padding of 2 bits
-                # http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
-                f.read(2)
-
-                for i in range(0, (old_div(extensionLength, 2)) - 1):
+                for i in range(0, old_div(extensionLength, 2)):
                     x = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                     y = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                     self.vLight.append(octDecode(x, y))
@@ -554,12 +550,8 @@ class TerrainTile(object):
             # Unsigned char size len is 1
             f.write(packEntry(meta['extensionLength'], 2 * vertexCount))
 
-            # Add 2 bytes of padding
-            f.write(packEntry('B', 1))
-            f.write(packEntry('B', 1))
-
             metaV = TerrainTile.OctEncodedVertexNormals
-            for i in xrange(0, vertexCount - 1):
+            for i in xrange(0, vertexCount):
                 x, y = octEncode(self.vLight[i])
                 f.write(packEntry(metaV['xy'], x))
                 f.write(packEntry(metaV['xy'], y))
