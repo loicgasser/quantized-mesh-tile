@@ -388,7 +388,7 @@ class TerrainTile(object):
             if extensionId == 1:
                 extensionLength = unpackEntry(f, meta['extensionLength'])
 
-                for i in range(0, (old_div(extensionLength, 2))):
+                for i in range(0, old_div(extensionLength, 2)):
                     x = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                     y = unpackEntry(f, TerrainTile.OctEncodedVertexNormals['xy'])
                     self.vLight.append(octDecode(x, y))
