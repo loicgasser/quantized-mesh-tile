@@ -1,6 +1,6 @@
 """ This module defines the :class:`quantized_mesh_tile.terrain.TerrainTile`.
 More information about the format specification can be found here:
-http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
+https://github.com/AnalyticalGraphicsInc/quantized-mesh
 
 Reference
 ---------

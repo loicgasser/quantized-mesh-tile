@@ -33,12 +33,6 @@ Disclamer
 
 This library is only at a very early stage (very first version) and is subject to changes.
 
-Known issue
------------
-
-This library can read and write tiles with the lighting extension header, but still fail to create correct unit
-vectors from scratch. PRs are welcome though!
-
 Development
 -----------
 
