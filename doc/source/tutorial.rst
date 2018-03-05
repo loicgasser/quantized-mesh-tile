@@ -23,7 +23,7 @@ The only available client able to read and display this format is `Cesium`_.
 This module has been developed based on the specifications of the format described `here`_.
 
 .. _here:
-    http://cesiumjs.org/data-and-assets/terrain/formats/quantized-mesh-1.0.html
+    https://github.com/AnalyticalGraphicsInc/quantized-mesh
 
 Therefore, if you've planned on creating your own terrain server, please make sure you follow all the instructions
 provided in the specifications of the format. You may also need to define a `layer.json`_ metadata file at the root of your
@@ -84,6 +84,11 @@ If you don't want to create a physical file but only need its content, you can u
   >>> content = tile.toBytesIO(gzipped=True)
 
 This operation will create a gzipped compressed string buffer wrapped in a `io.BytesIO` instance.
+
+If you want to enable lighting effect:
+
+  >>> tile = encode(geometries, bounds=bounds, hasLighting=True)
+  >>> content = tile.toBytesIO(gzipped=True)
 
 To define a water-mask you can use:
 

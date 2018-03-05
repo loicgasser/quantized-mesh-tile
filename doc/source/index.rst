@@ -33,20 +33,18 @@ Disclamer
 
 This library is only at a very early stage (very first version) and is subject to changes.
 
-Known issue
------------
-
-This library can read and write tiles with the lighting extension header, but still fail to create correct unit
-vectors from scratch. PRs are welcome though!
-
 Development
 -----------
 
 The code is available on GitHub: https://github.com/loicgasser/quantized-mesh-tile
 
-Contributors:
+Author:
 
 * Loïc Gasser (https://github.com/loicgasser)
+
+Contributors:
+
+* tiloSchlemmer (https://github.com/thiloSchlemmer)
 * Gilbert Jeiziner (https://github.com/gjn)
 * Roland Arsenault (https://github.com/rolker)
 * Ulrich Meier (https://github.com/umeier)
