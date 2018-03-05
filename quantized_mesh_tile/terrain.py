@@ -554,12 +554,8 @@ class TerrainTile(object):
             # Unsigned char size len is 1
             f.write(packEntry(meta['extensionLength'], 2 * vertexCount))
 
-            # Add 2 bytes of padding
-            f.write(packEntry('B', 1))
-            f.write(packEntry('B', 1))
-
             metaV = TerrainTile.OctEncodedVertexNormals
-            for i in xrange(0, vertexCount - 1):
+            for i in xrange(0, vertexCount):
                 x, y = octEncode(self.vLight[i])
                 f.write(packEntry(metaV['xy'], x))
                 f.write(packEntry(metaV['xy'], y))
