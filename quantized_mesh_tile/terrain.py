@@ -409,7 +409,8 @@ class TerrainTile(object):
 
         data = f.read(1)
         if data:
-            raise Exception('Should have reached end of file, but didn\'t')
+            #raise Exception('Should have reached end of file, but didn\'t')
+            pass
 
     def fromFile(self, filePath, hasLighting=False, hasWatermask=False, gzipped=False):
         """
