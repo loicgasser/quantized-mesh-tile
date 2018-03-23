@@ -6,12 +6,16 @@ from quantized_mesh_tile.utils import triangleArea
 from quantized_mesh_tile.llh_ecef import LLH2ECEF
 
 from quantized_mesh_tile import TerrainTile
-from quantized_mesh_tile.terrain import MAX
+from quantized_mesh_tile.terrain import MAX, lerp
 from . import cartesian3d as c3d
 
-null_normal = [0,0,0]
+null_normal = [0, 0, 0]
+
 
 class EditableTerrainTile(TerrainTile):
+
+    def __init__(self, *args, **kwargs):
+        super(EditableTerrainTile, self).__init__(*args, **kwargs)
 
     def get_bounding_box(self):
         return {'west': self._west,
@@ -27,6 +31,9 @@ class EditableTerrainTile(TerrainTile):
 
     def set_height(self, index, height):
         self.h[index] = self.quantize_height(height)
+
+    def get_uvh(self, index):
+        return self.u[index], self.v[index], self.h[index]
 
     def find_triangle_of(self, vertex_prev, vertex_next):
         if not self._triangles:
@@ -62,19 +69,13 @@ class EditableTerrainTile(TerrainTile):
         old_triangle = list(self._triangles[triangle_index])
         new_triangle = list(old_triangle)
 
-        # calculate new vertex from lat, lon, height to u,v, h
-        u_new, v_new, h_new = self.quantize_vertex(vertex_insert)
+        u, v, h = vertex_insert
 
         # insert new vertex in u,v,h
-        self.u.append(u_new)
-        self.v.append(v_new)
-        self.h.append(h_new)
+        self.u.append(u)
+        self.v.append(v)
+        self.h.append(h)
         self.vLight.append(null_normal)
-
-        # insert new vertex in lat, lon, height
-        self._longs.append(vertex_insert[0])
-        self._lats.append(vertex_insert[1])
-        self._heights.append(vertex_insert[2])
 
         vertex_new_index = len(self.h) - 1
 
@@ -118,15 +119,30 @@ class EditableTerrainTile(TerrainTile):
             h = int(round((height - self.header['minimumHeight']) * b_height))
         return h
 
-    def calculate_normals_for(self,triangles):
+    def calculate_normals_for(self, triangles):
         weighted_normals = []
         for triangle in triangles:
-            v0 = LLH2ECEF(self._longs[triangle[0]], self._lats[triangle[0]], self._heights[triangle[0]])
-            v1 = LLH2ECEF(self._longs[triangle[1]], self._lats[triangle[1]], self._heights[triangle[1]])
-            v2 = LLH2ECEF(self._longs[triangle[2]], self._lats[triangle[2]], self._heights[triangle[2]])
+            llh0 = self.uvh2_to_llh(triangle[0])
+            llh1 = self.uvh2_to_llh(triangle[1])
+            llh2 = self.uvh2_to_llh(triangle[2])
+            v0 = LLH2ECEF(llh0[0],llh0[1],llh0[2])
+            v1 = LLH2ECEF(llh1[0],llh1[1],llh1[2])
+            v2 = LLH2ECEF(llh2[0],llh2[1],llh2[2])
 
             normal = np.cross(c3d.subtract(v1, v0), c3d.subtract(v2, v0))
             area = triangleArea(v0, v1)
 
             weighted_normals.append(normal * area)
         return weighted_normals
+
+    def uvh2_to_llh(self, index):
+        long = (lerp(self._west, self._east, old_div(float(self.u[index]), MAX)))
+        lat = (lerp(self._south, self._north, old_div(float(self.v[index]), MAX)))
+        height = (
+            lerp(
+                self.header['minimumHeight'],
+                self.header['maximumHeight'],
+                old_div(float(self.h[index]), MAX)
+            )
+        )
+        return long, lat, height

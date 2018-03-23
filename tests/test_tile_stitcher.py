@@ -33,7 +33,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         # act
         center_tile = self.get_tile(center_z, center_x, center_y)
         neighbour_tile = self.get_tile(neighbour_z, neighbour_x, neighbour_y)
-        harmonizer = TileStitcher(center_tile)
+        stitcher = TileStitcher(center_tile)
 
         # assert
         self.assertIsInstance(center_tile, TerrainTile)
@@ -77,5 +77,3 @@ class TestHarmonizeNormals(unittest.TestCase):
         # assert
         stitcher.stitch_with(neighbour_tile)
 
-    def testTiles(self):
-        pass
