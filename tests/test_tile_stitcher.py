@@ -16,6 +16,7 @@ class TestHarmonizeNormals(unittest.TestCase):
     def get_tile(self, z, x, y):
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+        print("{0}, {1}, {2},{3}".format(minx, miny, maxx, maxy))
         tile = EditableTerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         tile.fromFile(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y)),hasLighting=True)
         return tile
@@ -61,19 +62,38 @@ class TestHarmonizeNormals(unittest.TestCase):
 
     def test_stitch_with(self):
         # arrange
+        # center_x = 4347
+        # center_y = 3127
+        # center_z = 12
+        #
+        # neighbour_x = 4347
+        # neighbour_y = 3126
+        # neighbour_z = 12
+
         center_x = 4347
-        center_y = 3127
+        center_y = 3126
         center_z = 12
 
-        neighbour_x = 4347
+        neighbour_x = 4346
         neighbour_y = 3126
         neighbour_z = 12
 
-        # act
         center_tile = self.get_tile(center_z, center_x, center_y)
         neighbour_tile = self.get_tile(neighbour_z, neighbour_x, neighbour_y)
+
+        # act
         stitcher = TileStitcher(center_tile)
+        stitcher.stitch_with(neighbour_tile)
+
+        center_tile.toFile('C:/Temp/12_4347_3126.terrain')
+        neighbour_tile.toFile('C:/Temp/12_4346_3126.terrain')
+
+        # with open('/tmp/12_4347_3126.obj', mode='w') as f:
+        #     center_tile.write_to_obj(f)
+        #
+        # with open('/tmp/12_4346_3126.obj', mode='w') as f:
+        #     neighbour_tile.write_to_obj(f)
 
         # assert
-        stitcher.stitch_with(neighbour_tile)
+        pass
 

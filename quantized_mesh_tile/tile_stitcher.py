@@ -2,9 +2,6 @@
 
 from __future__ import print_function
 from operator import itemgetter
-import numpy as np
-from quantized_mesh_tile.utils import triangleArea
-from quantized_mesh_tile.llh_ecef import LLH2ECEF
 from . import cartesian3d as c3d
 
 
@@ -68,6 +65,9 @@ class TileStitcher(object):
 
     def stitch_with(self, neighbour_tile):
         edge_connection = self.get_edge_connection(neighbour_tile)
+        center_new_vertices_count = 0
+        neighbour_new_vertices_count = 0
+        merged_vertices_count = 0
 
         edge_index = 0  # assume south>|<north
         if edge_connection in ['west', 'east']:  # assume west>|<east
@@ -82,7 +82,9 @@ class TileStitcher(object):
 
             # wenn vertex in c und n, dann nur höhe(c und n) angleichen
             if 'cn' == v['vertex_side']:
-                self.update_h_to_even(neighbour_tile, v)
+                self.update_height_to_even(neighbour_tile, v)
+                merged_vertices_count+=1
+
 
             # wenn vertex nur in c, dann triangle in n von vertex-1 und vertex+1 splitten
             if 'c' == v['vertex_side']:
@@ -90,9 +92,9 @@ class TileStitcher(object):
                 vertex_next = self.get_next_vertex(index, sorted_edge_vertices, 'n')
 
                 triangle = neighbour_tile.find_triangle_of(vertex_prev, vertex_next)
-                vertex_uvh_insert = self._center.get_uvh(v['vertex_indices'][0])
-                vertex_new = neighbour_tile.split_triangle(triangle, vertex_prev, vertex_next, vertex_uvh_insert)
-
+                vertex_llh_insert = self._center.get_llh(v['vertex_indices'][0])
+                vertex_new = neighbour_tile.split_triangle(triangle, vertex_prev, vertex_next, vertex_llh_insert)
+                neighbour_new_vertices_count+=1
                 v['vertex_side'] += 'n'
                 v['vertex_indices'].append(vertex_new)
 
@@ -102,8 +104,9 @@ class TileStitcher(object):
                 vertex_next = self.get_next_vertex(index, sorted_edge_vertices, 'c')
 
                 triangle = self._center.find_triangle_of(vertex_prev, vertex_next)
-                vertex_uvh_insert = neighbour_tile.get_uvh(v['vertex_indices'][0])
-                vertex_new = self._center.split_triangle(triangle, vertex_prev, vertex_next, vertex_uvh_insert)
+                vertex_llh_insert = neighbour_tile.get_llh(v['vertex_indices'][0])
+                vertex_new = self._center.split_triangle(triangle, vertex_prev, vertex_next, vertex_llh_insert)
+                center_new_vertices_count+=1
 
                 v['vertex_side'] += 'c'
                 v['vertex_indices'].append(vertex_new)
@@ -126,6 +129,11 @@ class TileStitcher(object):
             self._center.set_normal(center_vertex_index, normal_vertex)
             neighbour_tile.set_normal(neighbour_vertex_index, normal_vertex)
 
+
+        print("Tiles stitched together. {0} Vertices added in Center-Tile, {1} Vertices added in Neighbour-Tile. {2} Vertices with balanced Height-Values".format(center_new_vertices_count,neighbour_new_vertices_count, merged_vertices_count))
+        
+
+
     def get_next_vertex(self, index, sorted_edge_vertices, vertex_side_tag):
         k_next, v_next = get_next_by_key_and_value(sorted_edge_vertices, index, 'vertex_side', vertex_side_tag)
         vertex_next = v_next['vertex_indices'][v_next['vertex_side'].index(vertex_side_tag)]
@@ -136,15 +144,15 @@ class TileStitcher(object):
         vertex_prev = v_prev['vertex_indices'][v_prev['vertex_side'].index(vertex_side_tag)]
         return vertex_prev
 
-    def update_h_to_even(self, neighbour_tile, v):
+    def update_height_to_even(self, neighbour_tile, v):
         center_vertex_index = v['vertex_indices'][v['vertex_side'].find('c')]
         neighbour_vertex_index = v['vertex_indices'][v['vertex_side'].find('n')]
-        c_h = self._center.h[center_vertex_index]
-        n_h = neighbour_tile.h[neighbour_vertex_index]
-        if c_h != n_h:
-            h = (c_h + n_h) / 2
-            self._center.set_h(center_vertex_index, h)
-            neighbour_tile.set_h(neighbour_vertex_index, h)
+        c_height = self._center.get_height(center_vertex_index)
+        n_height = neighbour_tile.get_height(neighbour_vertex_index)
+        if c_height != n_height:
+            height = (c_height + n_height) / 2
+            self._center.set_height(center_vertex_index, height)
+            neighbour_tile.set_height(neighbour_vertex_index, height)
 
     def find_edge_vertices(self, neighbour_tile, edge_index):
         edge_vertices = {}

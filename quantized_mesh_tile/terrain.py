@@ -497,7 +497,11 @@ class TerrainTile(object):
         )
         for i in xrange(0, vertexCount - 1):
             ud = self.u[i + 1] - self.u[i]
-            f.write(packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(ud)))
+            try:
+                f.write(packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(ud)))
+            except:
+                print("{0} of {1}: ud ({2})".format(i, vertexCount, ud))
+
         f.write(
             packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.v[0]))
         )
