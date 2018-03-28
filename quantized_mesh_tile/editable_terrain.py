@@ -221,39 +221,3 @@ class EditableTerrainTile(TerrainTile):
         lat = (lerp(self._south, self._north, old_div(float(self.v[index]), MAX)))
         height = self.dequantize_height(self.h[index])
         return long, lat, height
-
-    def write_to_obj(self, stream):
-        stream.write("# LDBV R42 OBJ File: \n")
-        stream.write("# geodaten.bayern.de\n")
-
-        for v in self.getVerticesCoordinates():
-            stream.write("v {:.14f} {:.14f} {:.14f}\n".format(v[0], v[1], v[2]))
-
-        for v in self.vLight:
-            stream.write("vn {:.4f} {:.4f} {:.4f}\n".format(v[0], v[1], v[2]))
-
-        indices = iter(self.indices)
-        for i in xrange(0, len(self.indices) - 1, 3):
-            vi1 = next(indices)
-            vi2 = next(indices)
-            vi3 = next(indices)
-
-            stream.write("f {0} {1} {2}\n".format(vi1, vi2, vi3))
-
-    def write_to_wkt(self, stream):
-        stream.write("# LDBV R42 WKT File: \n")
-        stream.write("# geodaten.bayern.de\n")
-
-        indices = iter(self.indices)
-        for i in xrange(0, len(self.indices) - 1, 3):
-            vi1 = next(indices)
-            vi2 = next(indices)
-            vi3 = next(indices)
-            llh1 = self.get_llh(vi1)
-            llh2 = self.get_llh(vi2)
-            llh3 = self.get_llh(vi3)
-            v1_str = "{:.14f} {:.14f} {:.14f}".format(llh1[0], llh1[1], llh1[2])
-            v2_str = "{:.14f} {:.14f} {:.14f}".format(llh2[0], llh2[1], llh2[2])
-            v3_str = "{:.14f} {:.14f} {:.14f}".format(llh3[0], llh3[1], llh3[2])
-
-            stream.write("POLYGON Z(( {0}, {1}, {2}))\n".format(v1_str, v2_str, v3_str))
