@@ -3,6 +3,7 @@
 import unittest
 
 import os
+import platform
 
 from quantized_mesh_tile import TerrainTile
 from quantized_mesh_tile.editable_terrain import EditableTerrainTile
@@ -12,6 +13,12 @@ from quantized_mesh_tile.tile_stitcher import TileStitcher
 
 
 class TestHarmonizeNormals(unittest.TestCase):
+    def get_tmp_path(self):
+        current_system = platform.system()
+        if 'Windows' is current_system:
+            return 'c:/Temp/'
+        else:
+            return '/tmp/'
 
     def get_tile(self, z, x, y):
         geodetic = GlobalGeodetic(True)
@@ -55,7 +62,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         center_tile = self.get_tile(center_z, center_x, center_y)
         neighbour_tile = self.get_tile(neighbour_z, neighbour_x, neighbour_y)
         harmonizer = TileStitcher(center_tile)
-        edge_connection = harmonizer.get_edge_connection(neighbour_tile)
+        edge_connection = harmonizer._get_edge_connection(neighbour_tile)
 
         # assert
         self.assertIs(edge_connection, 'north')
@@ -78,10 +85,10 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher = TileStitcher(center_tile)
         stitcher.stitch_with(neighbour_tile)
 
-        with open('/tmp/12_4347_3128.wkt', mode='w') as f:
+        with open(os.path.join(self.get_tmp_path(), '12_4347_3128.wkt'), mode='w') as f:
             center_tile.write_to_wkt(f)
 
-        with open('/tmp/12_4347_3127.wkt', mode='w') as f:
+        with open(os.path.join(self.get_tmp_path(), '12_4347_3127.wkt'), mode='w') as f:
             neighbour_tile.write_to_wkt(f)
 
         # assert
@@ -104,8 +111,8 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher = TileStitcher(center_tile)
         stitcher.stitch_with(neighbour_tile)
 
-        center_tile.toFile('/tmp/12_4347_3128.terrain')
-        neighbour_tile.toFile('/tmp/12_4347_3127.terrain')
+        center_tile.toFile(os.path.join(self.get_tmp_path(), '12_4347_3128.terrain'))
+        neighbour_tile.toFile(os.path.join(self.get_tmp_path(), '12_4347_3127.terrain'))
 
         # assert
         pass
@@ -127,8 +134,8 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher = TileStitcher(center_tile)
         stitcher.stitch_with(neighbour_tile)
 
-        center_tile.toFile('/tmp/12_4347_3128.terrain')
-        neighbour_tile.toFile('/tmp/12_4348_3128.terrain')
+        center_tile.toFile(os.path.join(self.get_tmp_path(), '12_4347_3128.terrain'))
+        neighbour_tile.toFile(os.path.join(self.get_tmp_path(), '12_4348_3128.terrain'))
 
         # assert
         pass
@@ -143,7 +150,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         east_y = 3127
         east_z = 12
 
-        south_x= 4346
+        south_x = 4346
         south_y = 3126
         south_z = 12
 
@@ -157,9 +164,9 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher.add_neighbour(south_tile)
         stitcher.stitch_together()
 
-        center_tile.toFile('/tmp/12_4346_3127.terrain')
-        east_tile.toFile('/tmp/12_4347_3127.terrain')
-        south_tile.toFile('/tmp/12_4346_3126.terrain')
+        center_tile.toFile(os.path.join(self.get_tmp_path(), '12_4346_3127.terrain'))
+        east_tile.toFile(os.path.join(self.get_tmp_path(), '12_4347_3127.terrain'))
+        south_tile.toFile(os.path.join(self.get_tmp_path(), '12_4346_3126.terrain'))
 
         # assert
         pass

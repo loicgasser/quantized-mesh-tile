@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import math
 import numpy as np
 from future.utils import old_div
-from quantized_mesh_tile.utils import triangleArea
-
-from quantized_mesh_tile.llh_ecef import LLH2ECEF
 
 from quantized_mesh_tile import TerrainTile
+from quantized_mesh_tile.llh_ecef import LLH2ECEF
 from quantized_mesh_tile.terrain import MAX, lerp
+from quantized_mesh_tile.utils import triangleArea
 from . import cartesian3d as c3d
 
 null_normal = [0, 0, 0]
@@ -45,36 +43,43 @@ class EditableTerrainTile(TerrainTile):
         return self.uvh_to_llh(index)
 
     def find_triangle_of(self, vertex_prev, vertex_next):
-        if not self._triangles:
-            self.build_triangles()
-
-        for triangle in self._triangles:
-            if vertex_prev in triangle and vertex_next in triangle:
-                return self._triangles.index(triangle)
-        return None
-
-    def find_all_triangles_of(self, vertex):
-        triangles = []
-        if not self._triangles:
-            self.build_triangles()
-
-        for triangle in self._triangles:
-            if vertex in triangle:
-                triangles.append(triangle)
-
-        return triangles
-
-    def build_triangles(self):
         indices = iter(self.indices)
         for i in range(0, len(self.indices) - 1, 3):
             vi1 = next(indices)
             vi2 = next(indices)
             vi3 = next(indices)
             triangle = (vi1, vi2, vi3)
-            self._triangles.append(triangle)
+            if vertex_prev in triangle and vertex_next in triangle:
+                return int(i/3)
+        return None
+
+    def find_all_triangles_of(self, vertex):
+        triangles = []
+        for triangle in self.get_triangles():
+            if vertex in triangle:
+                triangles.append(triangle)
+
+        return triangles
+
+    def get_triangles(self):
+        indices = iter(self.indices)
+        for i in range(0, len(self.indices) - 1, 3):
+            vi1 = next(indices)
+            vi2 = next(indices)
+            vi3 = next(indices)
+            triangle = (vi1, vi2, vi3)
+            yield triangle
+
+    def get_triangle(self, index):
+        offset = index*3
+
+        vi1 = self.indices[offset]
+        vi2 = self.indices[offset+1]
+        vi3 = self.indices[offset+2]
+        return (vi1, vi2, vi3)
 
     def split_triangle(self, triangle_index, vertex_prev_index, vertex_next_index, vertex_insert):
-        old_triangle = list(self._triangles[triangle_index])
+        old_triangle = list(self.get_triangle(triangle_index))
         new_triangle = list(old_triangle)
 
         longitude, latitude, height = vertex_insert
@@ -102,9 +107,6 @@ class EditableTerrainTile(TerrainTile):
         self.indices[triangle_offset + vertex_offset] = vertex_new_index
         # add new triangle to indices-Array
         self.indices.extend(new_triangle)
-
-        self._triangles[triangle_index] = old_triangle
-        self._triangles.append(new_triangle)
 
         self.is_index_dirty = True
         return vertex_new_index
