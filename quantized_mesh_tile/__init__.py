@@ -47,9 +47,9 @@ def encode(geometries, bounds=[], autocorrectGeometries=False, hasLighting=False
 
         Default is `False`.
 
-    ``hasLighting``
+    ``hasLighting`` (Experimental)
 
-        (Experimental) Indicate whether unit vectors should be computed for the lighting extension.
+        Indicate whether unit vectors should be computed for the lighting extension.
 
         Default is `False`.
 
@@ -93,9 +93,9 @@ def decode(filePath, bounds, hasLighting=False, hasWatermask=False, gzipped=Fals
 
         The bounds of the terrain tile. (west, south, east, north) (Required).
 
-    ``hasLighting``
+    ``hasLighting`` (Experimental)
 
-        (Experimental) Indicate whether the tile has the lighting extension.
+        Indicate whether the tile has the lighting extension.
 
         Default is `False`.
 
