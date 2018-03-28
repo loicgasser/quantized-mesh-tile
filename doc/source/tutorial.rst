@@ -85,7 +85,7 @@ If you don't want to create a physical file but only need its content, you can u
 
 This operation will create a gzipped compressed string buffer wrapped in a `io.BytesIO` instance.
 
-If you want to enable lighting effect:
+If you want to enable lighting effect (experimental):
 
   >>> tile = encode(geometries, bounds=bounds, hasLighting=True)
   >>> content = tile.toBytesIO(gzipped=True)

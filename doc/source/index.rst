@@ -38,9 +38,13 @@ Development
 
 The code is available on GitHub: https://github.com/loicgasser/quantized-mesh-tile
 
-Contributors:
+Author:
 
 * Loïc Gasser (https://github.com/loicgasser)
+
+Contributors:
+
+* tiloSchlemmer (https://github.com/thiloSchlemmer)
 * Gilbert Jeiziner (https://github.com/gjn)
 * Roland Arsenault (https://github.com/rolker)
 * Ulrich Meier (https://github.com/umeier)
