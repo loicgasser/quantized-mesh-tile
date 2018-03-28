@@ -49,7 +49,7 @@ def encode(geometries, bounds=[], autocorrectGeometries=False, hasLighting=False
 
     ``hasLighting``
 
-        Indicate whether unit vectors should be computed for the lighting extension.
+        (Experimental) Indicate whether unit vectors should be computed for the lighting extension.
 
         Default is `False`.
 
@@ -95,7 +95,7 @@ def decode(filePath, bounds, hasLighting=False, hasWatermask=False, gzipped=Fals
 
     ``hasLighting``
 
-        Indicate whether the tile has the lighting extension.
+        (Experimental) Indicate whether the tile has the lighting extension.
 
         Default is `False`.
 
