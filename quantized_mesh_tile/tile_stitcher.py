@@ -81,6 +81,8 @@ class TileStitcher(object):
                 vertex_next = self._get_next_vertex(index, vertices, v['edge_info'])
 
                 triangle = self._neighbours[v['edge_info']].find_triangle_of(vertex_prev, vertex_next)
+                if triangle is None:
+                    continue
                 vertex_llh_insert = self._center.get_llh(v['vertex_indices'][0])
                 vertex_new = self._neighbours[v['edge_info']].split_triangle(triangle, vertex_prev, vertex_next,
                                                                               vertex_llh_insert)
