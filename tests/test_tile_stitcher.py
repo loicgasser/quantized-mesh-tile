@@ -86,10 +86,10 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher.stitch_with(neighbour_tile)
 
         with open(os.path.join(self.get_tmp_path(), '12_4347_3128.wkt'), mode='w') as f:
-            center_tile.write_to_wkt(f)
+            center_tile.toWKT(f)
 
         with open(os.path.join(self.get_tmp_path(), '12_4347_3127.wkt'), mode='w') as f:
-            neighbour_tile.write_to_wkt(f)
+            neighbour_tile.toWKT(f)
 
         # assert
         pass
