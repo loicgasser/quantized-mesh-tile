@@ -160,26 +160,12 @@ def computeNormals(vertices, faces):
         v0 = vertices[face[0]]
         v1 = vertices[face[1]]
         v2 = vertices[face[2]]
-        ctrd = centroid(v0, v1, v2)
 
-        v1A = c3d.subtract(v1, v0)
-        v2A = c3d.subtract(v2, v0)
-        normalA = np.cross(v1A, v2A)
-        viewPointA = c3d.add(ctrd, normalA)
-
-        normalB = np.cross(v2A, v1A)
-        viewPointB = c3d.add(ctrd, normalB)
+        normal = np.cross(c3d.subtract(v1, v0), c3d.subtract(v2, v0))
 
         area = triangleArea(v0, v1)
         areasPerFace[i] = area
-        squaredDistanceA = c3d.magnitudeSquared(viewPointA)
-        squaredDistanceB = c3d.magnitudeSquared(viewPointB)
-
-        # Always take the furthest point
-        if squaredDistanceA > squaredDistanceB:
-            normalsPerFace[i] = normalA
-        else:
-            normalsPerFace[i] = normalB
+        normalsPerFace[i] = normal
 
     for i in xrange(0, numFaces):
         face = faces[i]
