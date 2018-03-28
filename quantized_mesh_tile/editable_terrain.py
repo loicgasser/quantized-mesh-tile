@@ -125,7 +125,7 @@ class EditableTerrainTile(TerrainTile):
         index_map = {}
 
         new_index = 0
-        for i in xrange(0, size - 1):
+        for i in xrange(0, size):
             old_i = self.indices[i]
 
             if old_i in index_map.keys():
@@ -221,3 +221,24 @@ class EditableTerrainTile(TerrainTile):
         lat = (lerp(self._south, self._north, old_div(float(self.v[index]), MAX)))
         height = self.dequantize_height(self.h[index])
         return long, lat, height
+
+    def write_to_wkt(self, stream):
+        if self.is_index_dirty:
+            self.rebuild_indices()
+
+        for v in self.getVerticesCoordinates():
+            stream.write("v {0} {1} {2}\n".format(v[0], v[1], v[2]))
+
+        indices = iter(self.indices)
+        for i in xrange(0, len(self.indices) - 1, 3):
+            vi1 = next(indices)
+            vi2 = next(indices)
+            vi3 = next(indices)
+            llh1 = self.get_llh(vi1)
+            llh2 = self.get_llh(vi2)
+            llh3 = self.get_llh(vi3)
+            v1_str = "{:.14f} {:.14f} {:.14f}".format(llh1[0], llh1[1], llh1[2])
+            v2_str = "{:.14f} {:.14f} {:.14f}".format(llh2[0], llh2[1], llh2[2])
+            v3_str = "{:.14f} {:.14f} {:.14f}".format(llh3[0], llh3[1], llh3[2])
+
+            stream.write("POLYGON Z(( {0}, {1}, {2}))\n".format(v1_str, v2_str, v3_str))

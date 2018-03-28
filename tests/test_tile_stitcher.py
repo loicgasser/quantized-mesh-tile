@@ -16,9 +16,10 @@ class TestHarmonizeNormals(unittest.TestCase):
     def get_tile(self, z, x, y):
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
-        print("{0}, {1}, {2},{3}".format(minx, miny, maxx, maxy))
+        # print("{0}, {1}, {2},{3}".format(minx, miny, maxx, maxy))
         tile = EditableTerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        tile.fromFile(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y)),hasLighting=True)
+        tile.fromFile(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y)),
+                      hasLighting=True)
         return tile
 
     def test_constructor(self):
@@ -60,22 +61,14 @@ class TestHarmonizeNormals(unittest.TestCase):
         self.assertIs(edge_connection, 'north')
         self.assertIsNotNone(edge_connection)
 
-    def test_stitch_with(self):
+    def test_stitch_with_to_wkt(self):
         # arrange
-        # center_x = 4347
-        # center_y = 3127
-        # center_z = 12
-        #
-        # neighbour_x = 4347
-        # neighbour_y = 3126
-        # neighbour_z = 12
-
         center_x = 4347
-        center_y = 3126
+        center_y = 3128
         center_z = 12
 
-        neighbour_x = 4346
-        neighbour_y = 3126
+        neighbour_x = 4347
+        neighbour_y = 3127
         neighbour_z = 12
 
         center_tile = self.get_tile(center_z, center_x, center_y)
@@ -85,15 +78,88 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher = TileStitcher(center_tile)
         stitcher.stitch_with(neighbour_tile)
 
-        center_tile.toFile('C:/Temp/12_4347_3126.terrain')
-        neighbour_tile.toFile('C:/Temp/12_4346_3126.terrain')
+        with open('/tmp/12_4347_3128.wkt', mode='w') as f:
+            center_tile.write_to_wkt(f)
 
-        # with open('/tmp/12_4347_3126.obj', mode='w') as f:
-        #     center_tile.write_to_obj(f)
-        #
-        # with open('/tmp/12_4346_3126.obj', mode='w') as f:
-        #     neighbour_tile.write_to_obj(f)
+        with open('/tmp/12_4347_3127.wkt', mode='w') as f:
+            neighbour_tile.write_to_wkt(f)
 
         # assert
         pass
 
+    def test_stitch_with_north_south(self):
+        # arrange
+        center_x = 4347
+        center_y = 3128
+        center_z = 12
+
+        neighbour_x = 4347
+        neighbour_y = 3127
+        neighbour_z = 12
+
+        center_tile = self.get_tile(center_z, center_x, center_y)
+        neighbour_tile = self.get_tile(neighbour_z, neighbour_x, neighbour_y)
+
+        # act
+        stitcher = TileStitcher(center_tile)
+        stitcher.stitch_with(neighbour_tile)
+
+        center_tile.toFile('/tmp/12_4347_3128.terrain')
+        neighbour_tile.toFile('/tmp/12_4347_3127.terrain')
+
+        # assert
+        pass
+
+    def test_stitch_with_west_east(self):
+        # arrange
+        center_x = 4347
+        center_y = 3128
+        center_z = 12
+
+        neighbour_x = 4348
+        neighbour_y = 3128
+        neighbour_z = 12
+
+        center_tile = self.get_tile(center_z, center_x, center_y)
+        neighbour_tile = self.get_tile(neighbour_z, neighbour_x, neighbour_y)
+
+        # act
+        stitcher = TileStitcher(center_tile)
+        stitcher.stitch_with(neighbour_tile)
+
+        center_tile.toFile('/tmp/12_4347_3128.terrain')
+        neighbour_tile.toFile('/tmp/12_4348_3128.terrain')
+
+        # assert
+        pass
+
+    def test_stitch_with_east_and_south(self):
+        # arrange
+        center_x = 4346
+        center_y = 3127
+        center_z = 12
+
+        east_x = 4347
+        east_y = 3127
+        east_z = 12
+
+        south_x= 4346
+        south_y = 3126
+        south_z = 12
+
+        center_tile = self.get_tile(center_z, center_x, center_y)
+        east_tile = self.get_tile(east_z, east_x, east_y)
+        south_tile = self.get_tile(south_z, south_x, south_y)
+
+        # act
+        stitcher = TileStitcher(center_tile)
+        stitcher.add_neighbour(east_tile)
+        stitcher.add_neighbour(south_tile)
+        stitcher.stitch_together()
+
+        center_tile.toFile('/tmp/12_4346_3127.terrain')
+        east_tile.toFile('/tmp/12_4347_3127.terrain')
+        south_tile.toFile('/tmp/12_4346_3126.terrain')
+
+        # assert
+        pass
