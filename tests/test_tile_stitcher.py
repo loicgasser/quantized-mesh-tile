@@ -12,8 +12,11 @@ from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 from quantized_mesh_tile.tile_stitcher import TileStitcher
 
 
-def get_south_and_east(z, x, y):
-    return {'south': (z, x, y - 1), 'east': (z, x + 1, y)}
+def get_neighbours(z, x, y):
+    return {'west': (z, x - 1, y),
+            'north': (z, x, y + 1),
+            'south': (z, x, y - 1),
+            'east': (z, x + 1, y)}
 
 
 def get_tmp_path():
@@ -116,13 +119,36 @@ class TestHarmonizeNormals(unittest.TestCase):
 
         center_tile = get_tile(center_z, center_x, center_y)
         neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        if os.path.exists(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt')):
+            os.remove(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt'))
+        center_tile.toWKT(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt'))
+        if os.path.exists(os.path.join(get_tmp_path(), 'before_12_4347_3127.wkt')):
+            os.remove(os.path.join(get_tmp_path(), 'before_12_4347_3127.wkt'))
+        neighbour_tile.toWKT(os.path.join(get_tmp_path(), 'before_12_4347_3127.wkt'))
 
         # act
         stitcher = TileStitcher(center_tile)
-        stitcher.stitch_with(neighbour_tile)
+        stitcher.add_neighbour(neighbour_tile)
+        stitcher.stitch_together()
 
+        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3128.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
         center_tile.toFile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
+
+        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3127.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '12_4347_3127.terrain'))
         neighbour_tile.toFile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'))
+
+        center_tile = load_tile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'), center_x, center_y, center_z)
+        neighbour_tile = load_tile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'), neighbour_x, neighbour_y,
+                                   neighbour_z)
+
+        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3128.wkt')):
+            os.remove(os.path.join(get_tmp_path(), '12_4347_3128.wkt'))
+        center_tile.toWKT(os.path.join(get_tmp_path(), '12_4347_3128.wkt'))
+        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3127.wkt')):
+            os.remove(os.path.join(get_tmp_path(), '12_4347_3127.wkt'))
+        neighbour_tile.toWKT(os.path.join(get_tmp_path(), '12_4347_3127.wkt'))
 
         # assert
         pass
@@ -144,7 +170,12 @@ class TestHarmonizeNormals(unittest.TestCase):
         stitcher = TileStitcher(center_tile)
         stitcher.stitch_with(neighbour_tile)
 
+        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3128.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
         center_tile.toFile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
+
+        if os.path.exists(os.path.join(get_tmp_path(), '12_4348_3128.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '12_4348_3128.terrain'))
         neighbour_tile.toFile(os.path.join(get_tmp_path(), '12_4348_3128.terrain'))
 
         # assert
@@ -183,7 +214,8 @@ class TestHarmonizeNormals(unittest.TestCase):
 
     def test_traverse_over_directory(self):
         # arrange
-        directory_path = 'C:/Work/terrain/12'
+        directory_path = '/export/data1/Test_DGMNormals/12_'
+
         z = 12
         # act
         terrain_files = []
@@ -197,25 +229,24 @@ class TestHarmonizeNormals(unittest.TestCase):
             y = int(os.path.basename(tile_path).split('.')[0])
             x = int(os.path.basename(os.path.dirname(tile_path)))
             print('processing {0} ...'.format(tile_path))
-            neighbours = get_south_and_east(z, x, y)
+            neighbours = get_neighbours(z, x, y)
             center_tile = load_tile(tile_path, x, y, z)
 
             stitcher = TileStitcher(center_tile)
-            s_z, s_x, s_y = neighbours['south']
-            neighbour_south_path = os.path.join(directory_path, '%s/%s.terrain' % (s_x, s_y))
-            if os.path.exists(neighbour_south_path):
-                south_tile = load_tile(neighbour_south_path, s_x, s_y, z)
-                stitcher.add_neighbour(south_tile)
-            e_z, e_x, e_y = neighbours['east']
-            neighbour_east_path = os.path.join(directory_path, '%s/%s.terrain' % (e_x, e_y))
-            if os.path.exists(neighbour_east_path):
-                east_tile = load_tile(neighbour_east_path, e_x, e_y, z)
-                stitcher.add_neighbour(east_tile)
+            for n, tile_info in neighbours.items():
+                n_z, n_x, n_y = tile_info
 
+                neighbour_path = os.path.join(directory_path, '%s/%s.terrain' % (n_x, n_y))
+                if os.path.exists(neighbour_path):
+                    print("\tadding Neighbour {0}...".format(neighbour_path))
+                    tile = load_tile(neighbour_path, n_x, n_y, z)
+                    stitcher.add_neighbour(tile)
+            result_path = tile_path.replace('/12_/', '/edited_12/')
             stitcher.stitch_together()
-            if os.path.exists(neighbour_south_path):
-                os.remove(neighbour_south_path)
-                south_tile.toFile(neighbour_south_path)
-            if os.path.exists(neighbour_east_path):
-                os.remove(neighbour_east_path)
-                east_tile.toFile(neighbour_east_path)
+            target_dir_path = os.path.dirname(result_path)
+            if not os.path.exists(target_dir_path):
+                os.makedirs(target_dir_path)
+
+            if os.path.exists(result_path):
+                os.remove(result_path)
+            center_tile.toFile(result_path)

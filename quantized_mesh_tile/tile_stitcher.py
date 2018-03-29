@@ -12,9 +12,11 @@ def get_next_by_key_and_value(tuple_list, index, key, value):
         return None
 
     k_next, v_next = tuple_list[index]
-    while value not in v_next[key]:
+    hit = False
+    while not hit:
         index += 1
         k_next, v_next = tuple_list[index]
+        hit = value in v_next[key]
 
     return k_next, v_next
 
@@ -66,59 +68,44 @@ class TileStitcher(object):
 
         return None, None
 
-    def _stitch_edges(self, vertices):
+    def _find_neighbour_triangles(self, vertices):
         full_edge_point = 2
-
+        neighbour_weighted_normals = {}
         for index in range(len(vertices)):
             k, v = vertices[index]
+            center_vertex_index = v['vertex_indices'][v['vertex_side'].find('c')]
 
-            # wenn vertex in c und n, dann nur höhe(c und n) angleichen
+            # wenn vertex in c und n, dann alle gewichteten Normalen der Nachbar-Triangles berechnen
             if len(v['vertex_side']) >= full_edge_point:
-                self._update_height_to_even(v)
+                weighted_normals = []
+                for edge_info in v['vertex_side']:
+                    if edge_info is not 'c':
+                        vertex_index = v['vertex_indices'][v['vertex_side'].index(edge_info)]
+                        triangles = self._neighbours[v['edge_info']].find_all_triangles_of(vertex_index)
+                        weighted_normals.extend(self._neighbours[v['edge_info']].calculate_weighted_normals_for(triangles))
+                neighbour_weighted_normals[center_vertex_index] = weighted_normals
+
             elif 'c' == v['vertex_side']:
-                # wenn vertex nur in c, dann triangle in n von vertex-1 und vertex+1 splitten
+                # wenn vertex nur in c, dann triangle in n von vertex-1 und vertex+1 finden und die gewichtete Normale berechnen
                 vertex_prev = self._get_prev_vertex(index, vertices, v['edge_info'])
                 vertex_next = self._get_next_vertex(index, vertices, v['edge_info'])
 
-                triangle = self._neighbours[v['edge_info']].find_triangle_of(vertex_prev, vertex_next)
-                if triangle is None:
-                    continue
-                vertex_llh_insert = self._center.get_llh(v['vertex_indices'][0])
-                vertex_new = self._neighbours[v['edge_info']].split_triangle(triangle, vertex_prev, vertex_next,
-                                                                              vertex_llh_insert)
-                v['vertex_side'] += v['edge_info']
-                v['vertex_indices'].append(vertex_new)
-            else:
-                # wenn vertex nur in n, dann triangle in c von c-vertex-1 und c-vertex+1 splitten
-                vertex_prev = self._get_prev_vertex(index, vertices, 'c')
-                vertex_next = self._get_next_vertex(index, vertices, 'c')
+                triangle_index = self._neighbours[v['edge_info']].find_triangle_of(vertex_prev, vertex_next)
+                if not triangle_index:
+                    print(" No Triangle found for {0}|{1} in {2} !".format(vertex_prev, vertex_next, edge_info))
+                else:
+                    triangle = self._neighbours[v['edge_info']].get_triangle(triangle_index)
+                    weighted_normals=self._neighbours[v['edge_info']].calculate_weighted_normals_for([triangle])
+                    neighbour_weighted_normals[center_vertex_index] = weighted_normals
 
-                triangle = self._center.find_triangle_of(vertex_prev, vertex_next)
-                vertex_llh_insert = self._neighbours[v['edge_info']].get_llh(v['vertex_indices'][0])
-                vertex_new = self._center.split_triangle(triangle, vertex_prev, vertex_next, vertex_llh_insert)
+        return neighbour_weighted_normals
 
-                v['vertex_side'] += 'c'
-                v['vertex_indices'].append(vertex_new)
-
-    def _build_normals(self, sorted_edge_vertices):
-        for k, v in sorted_edge_vertices:
-            center_vertex_index = v['vertex_indices'][v['vertex_side'].index('c')]
-
-            neighbour_vertex_indices = {}
-            for edge_info in v['vertex_side']:
-                if edge_info is 'c':
-                    continue
-                neighbour_vertex_indices[edge_info] = v['vertex_indices'][v['vertex_side'].index(edge_info)]
+    def _build_normals(self, neighbour_weighted_normals):
+        for center_vertex_index, n_weighted_normals in neighbour_weighted_normals.items():
 
             center_triangles = self._center.find_all_triangles_of(center_vertex_index)
-            weighted_normals = self._center.calculate_normals_for(center_triangles)
-
-            neighbour_triangles = []
-            for neighbour_info, vertex_index in neighbour_vertex_indices.items():
-                neighbour_tile = self._neighbours[neighbour_info]
-                neighbour_triangles.extend(neighbour_tile.find_all_triangles_of(vertex_index))
-
-            weighted_normals += neighbour_tile.calculate_normals_for(neighbour_triangles)
+            weighted_normals = self._center.calculate_weighted_normals_for(center_triangles)
+            weighted_normals.extend(n_weighted_normals)
 
             normal_vertex = [0, 0, 0]
             for w_n in weighted_normals:
@@ -126,9 +113,7 @@ class TileStitcher(object):
 
             normal_vertex = c3d.normalize(normal_vertex)
             self._center.set_normal(center_vertex_index, normal_vertex)
-            for neighbour_info, vertex_index in neighbour_vertex_indices.items():
-                neighbour_tile = self._neighbours[neighbour_info]
-                neighbour_tile.set_normal(vertex_index, normal_vertex)
+
 
     def _get_next_vertex(self, index, vertices, vertex_side_tag):
         k_next, v_next = get_next_by_key_and_value(vertices, index, 'vertex_side', vertex_side_tag)
@@ -173,20 +158,20 @@ class TileStitcher(object):
             key_prefix = int(math.fabs(edge_index - 1))
             for i in center_indices:
                 uv = (self._center.u[i], self._center.v[i])
-                key = '{:05}_{:05}'.format(uv[key_prefix], uv[edge_index])
+                key = '{}_{:05}'.format(edge_info, uv[edge_index])
 
-                edge_vertices[key] = {'vertex_side': 'c', 'vertex_indices': [i], 'edge_info':edge_info}
+                edge_vertices[key] = {'vertex_side': 'c', 'vertex_indices': [i], 'edge_info': edge_info}
             for i in neighbour_indices:
                 uv = (neighbour_tile.u[i], neighbour_tile.v[i])
 
-                key = '{:05}_{:05}'.format(int(math.fabs(uv[key_prefix] - 32767)), uv[edge_index])
+                key = '{}_{:05}'.format(edge_info, uv[edge_index])
 
                 if key in edge_vertices.keys():
                     if edge_info not in edge_vertices[key]['vertex_side']:
                         edge_vertices[key]['vertex_indices'].append(i)
                         edge_vertices[key]['vertex_side'] += edge_info
                 else:
-                    edge_vertices[key] = {'vertex_side': edge_info, 'vertex_indices': [i], 'edge_info':edge_info}
+                    edge_vertices[key] = {'vertex_side': edge_info, 'vertex_indices': [i], 'edge_info': edge_info}
         return edge_vertices
 
     def add_neighbour(self, neighbour_tile):
@@ -196,8 +181,5 @@ class TileStitcher(object):
     def stitch_together(self):
         edge_vertices = self._find_edge_vertices()
         sorted_edge_vertices = sorted(edge_vertices.items(), key=itemgetter(0))
-
-        self._stitch_edges(sorted_edge_vertices)
-        self._build_normals(sorted_edge_vertices)
-
-
+        neighbour_weighted_normals = self._find_neighbour_triangles(sorted_edge_vertices)
+        self._build_normals(neighbour_weighted_normals )

@@ -24,9 +24,11 @@ class EditableTerrainTile(TerrainTile):
                 'south': self._south}
 
     def set_normal(self, index, normal):
+        self.is_index_dirty = True
         self.vLight[index] = normal
 
     def set_height(self, index, height):
+        self.is_index_dirty = True
         self.h[index] = self._quantize_height(height)
 
     def get_height(self, index):
@@ -38,14 +40,22 @@ class EditableTerrainTile(TerrainTile):
 
     def find_triangle_of(self, vertex_prev, vertex_next):
         indices = iter(self.indices)
-        for i in range(0, len(self.indices) - 1, 3):
+        triangles_prev = []
+        triangles_next = []
+        for i in range(0, len(self.indices), 3):
             vi1 = next(indices)
             vi2 = next(indices)
             vi3 = next(indices)
             triangle = (vi1, vi2, vi3)
-            if vertex_prev in triangle and vertex_next in triangle:
-                return int(i / 3)
-        return None
+            if vertex_prev in triangle:
+                triangles_prev.append(i / 3)
+            if vertex_next in triangle:
+                triangles_next.append(i / 3)
+        triangles = list(set(triangles_prev) - (set(triangles_prev) - set(triangles_next)))
+        if len(triangles) == 0:
+            return None
+
+        return triangles[0]
 
     def find_all_triangles_of(self, vertex):
         triangles = []
@@ -57,7 +67,7 @@ class EditableTerrainTile(TerrainTile):
 
     def get_triangles(self):
         indices = iter(self.indices)
-        for i in range(0, len(self.indices) - 1, 3):
+        for i in range(0, len(self.indices), 3):
             vi1 = next(indices)
             vi2 = next(indices)
             vi3 = next(indices)
@@ -72,7 +82,7 @@ class EditableTerrainTile(TerrainTile):
         vi3 = self.indices[offset + 2]
         return vi1, vi2, vi3
 
-    def calculate_normals_for(self, triangles):
+    def calculate_weighted_normals_for(self, triangles):
         weighted_normals = []
         for triangle in triangles:
             llh0 = self._uvh_to_llh(triangle[0])
@@ -117,6 +127,7 @@ class EditableTerrainTile(TerrainTile):
                 stream.write("POLYGON Z(( {0}, {1}, {2}))\n".format(v1_str, v2_str, v3_str))
 
     def split_triangle(self, triangle_index, vertex_prev_index, vertex_next_index, vertex_insert):
+        self.is_index_dirty = True
         old_triangle = list(self.get_triangle(triangle_index))
         new_triangle = list(old_triangle)
 
@@ -146,7 +157,6 @@ class EditableTerrainTile(TerrainTile):
         # add new triangle to indices-Array
         self.indices.extend(new_triangle)
 
-        self.is_index_dirty = True
         return vertex_new_index
 
     def _rebuild_indices(self):
@@ -195,15 +205,50 @@ class EditableTerrainTile(TerrainTile):
 
             new_indices.append(new_i)
 
-        self.indices = new_indices
-        self.u = new_u
-        self.v = new_v
-        self.h = new_h
-        self.westI = new_west_i
-        self.southI = new_south_i
-        self.eastI = new_east_i
-        self.northI = new_north_i
-        self.vLight = new_v_light
+        if len(self.indices) == len(new_indices):
+            self.indices = new_indices
+        else:
+            raise Exception("Array-Size of Indices not equal")
+
+        if len(self.u) == len(new_u):
+            self.u = new_u
+        else:
+            raise Exception("Array-Size of u-Values not equal")
+
+        if len(self.v) == len(new_v):
+            self.v = new_v
+        else:
+            raise Exception("Array-Size of v-Values not equal")
+
+        if len(self.h) == len(new_h):
+            self.h = new_h
+        else:
+            raise Exception("Array-Size of h-Values not equal")
+
+        if len(self.westI) == len(new_west_i):
+            self.westI = new_west_i
+        else:
+            raise Exception("Array-Size of westIndices not equal")
+
+        if len(self.southI) == len(new_south_i):
+            self.southI = new_south_i
+        else:
+            raise Exception("Array-Size of southIndices not equal")
+
+        if len(self.eastI) == len(new_east_i):
+            self.eastI = new_east_i
+        else:
+            raise Exception("Array-Size of eastIndices not equal")
+
+        if len(self.northI) == len(new_north_i):
+            self.northI = new_north_i
+        else:
+            raise Exception("Array-Size of northIndices not equal")
+
+        if len(self.vLight) == len(new_v_light):
+            self.vLight = new_v_light
+        else:
+            raise Exception("Array-Size of northIndices not equal")
 
     def _quantize_latitude(self, latitude):
         b_lat = old_div(MAX, (self._north - self._south))
