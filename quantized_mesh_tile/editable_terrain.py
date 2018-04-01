@@ -16,6 +16,23 @@ class EditableTerrainTile(TerrainTile):
     def __init__(self, *args, **kwargs):
         super(EditableTerrainTile, self).__init__(*args, **kwargs)
         self.is_index_dirty = False
+        self._changed_heights = []
+
+    def get_edge_vertices(self, edge):
+        if 'w' == edge:
+            edge_value = 0
+            search_array = self.u
+        elif 'e' == edge:
+            edge_value = MAX
+            search_array = self.u
+        elif 'n' == edge:
+            edge_value = MAX
+            search_array = self.v
+        elif 's' == edge:
+            edge_value = 0
+            search_array = self.v
+        indices = [i for i, x in enumerate(search_array) if x == edge_value]
+        return indices
 
     def get_bounding_box(self):
         return {'west': self._west,
@@ -28,8 +45,27 @@ class EditableTerrainTile(TerrainTile):
         self.vLight[index] = normal
 
     def set_height(self, index, height):
-        self.is_index_dirty = True
-        self.h[index] = self._quantize_height(height)
+        height_is_dirty = False
+
+        if height < self.header['minimumHeight']:
+            print(
+                "Warning!!!! New Height for Vertex {0} is lower than minimumHeight.".format(
+                    height))
+            # height_is_dirty = True
+            height = self.header['minimumHeight']
+
+        if self.header['maximumHeight'] < height:
+            print(
+                "Warning!!!! New Height for Vertex {0} is higher than maximumHeight.".format(
+                    height))
+            # height_is_dirty = True
+            height = self.header['maximumHeight']
+        if height_is_dirty:
+            if not self._changed_heights:
+                self._changed_heights = [self._dequantize_height(x) for x in self.h]
+            self._changed_heights[index] = height
+        else:
+            self.h[index] = self._quantize_height(height)
 
     def get_height(self, index):
         height = self._dequantize_height(self.h[index])
@@ -38,24 +74,48 @@ class EditableTerrainTile(TerrainTile):
     def get_llh(self, index):
         return self._uvh_to_llh(index)
 
-    def find_triangle_of(self, vertex_prev, vertex_next):
+    def build_edge_triangles(self, edge):
+        if edge == 'e':
+            return self.build_triangles_for(self.eastI)
+        if edge == 'w':
+            return self.build_triangles_for(self.westI)
+        if edge == 'n':
+            return self.build_triangles_for(self.northI)
+        if edge == 's':
+            return self.build_triangles_for(self.southI)
+        return [None]
+
+    def build_triangles_for(self, vertices):
+        triangles = {}
+        for vertex in vertices:
+            triangle_id = self.get_triangle_of(vertex)
+            if not triangles.has_key(triangle_id):
+                triangles[triangle_id] = self.get_triangle(triangle_id)
+        return triangles
+
+    def get_triangle_of(self, vertex):
         indices = iter(self.indices)
-        triangles_prev = []
-        triangles_next = []
-        for i in range(0, len(self.indices), 3):
+        for i in range(0, len(self.indices) - 1, 3):
             vi1 = next(indices)
             vi2 = next(indices)
             vi3 = next(indices)
             triangle = (vi1, vi2, vi3)
-            if vertex_prev in triangle:
-                triangles_prev.append(i / 3)
-            if vertex_next in triangle:
-                triangles_next.append(i / 3)
-        triangles = list(set(triangles_prev) - (set(triangles_prev) - set(triangles_next)))
-        if len(triangles) == 0:
-            return None
+            if vertex in triangle:
+                return i / 3
 
-        return triangles[0]
+        return None
+
+    def find_triangle_of(self, vertex_prev, vertex_next):
+        indices = iter(self.indices)
+        for i in range(0, len(self.indices) - 1, 3):
+            vi1 = next(indices)
+            vi2 = next(indices)
+            vi3 = next(indices)
+            triangle = (vi1, vi2, vi3)
+            if vertex_prev in triangle and vertex_next in triangle:
+                return i / 3
+
+        return None
 
     def find_all_triangles_of(self, vertex):
         triangles = []
@@ -101,6 +161,7 @@ class EditableTerrainTile(TerrainTile):
     def toFile(self, file_path, gzipped=False):
         if self.is_index_dirty:
             self._rebuild_indices()
+
         super(EditableTerrainTile, self).toFile(file_path, gzipped)
 
     def toWKT(self, file_path):
@@ -109,8 +170,10 @@ class EditableTerrainTile(TerrainTile):
             self._rebuild_indices()
 
         with open(file_path, mode='w') as stream:
-            for v in self.getVerticesCoordinates():
-                stream.write("v {0} {1} {2}\n".format(v[0], v[1], v[2]))
+            vertices = self.getVerticesCoordinates()
+            for i in range(len(vertices)):
+                v = vertices[i]
+                stream.write("POINT Z( {0} {1} {2}), {3}\n".format(v[0], v[1], v[2], i))
 
             indices = iter(self.indices)
             for i in xrange(0, len(self.indices) - 1, 3):
@@ -124,7 +187,7 @@ class EditableTerrainTile(TerrainTile):
                 v2_str = "{:.14f} {:.14f} {:.14f}".format(llh2[0], llh2[1], llh2[2])
                 v3_str = "{:.14f} {:.14f} {:.14f}".format(llh3[0], llh3[1], llh3[2])
 
-                stream.write("POLYGON Z(( {0}, {1}, {2}))\n".format(v1_str, v2_str, v3_str))
+                stream.write("POLYGON Z(( {0}, {1}, {2})), {3}\n".format(v1_str, v2_str, v3_str, i))
 
     def split_triangle(self, triangle_index, vertex_prev_index, vertex_next_index, vertex_insert):
         self.is_index_dirty = True
@@ -134,16 +197,22 @@ class EditableTerrainTile(TerrainTile):
         longitude, latitude, height = vertex_insert
         u = self._quantize_longitude(longitude)
         v = self._quantize_latitude(latitude)
-        h = self._quantize_height(height)
 
         # insert new vertex in u,v,h
         self.u.append(u)
         self.v.append(v)
+        vertex_new_index = len(self.u) - 1
+
+        if height < self.header['minimumHeight'] or self.header['maximumHeight'] < height:
+            if not self._changed_heights:
+                self._changed_heights = [self._dequantize_height(x) for x in self.h]
+            self._changed_heights.append(height)
+            h = 0
+        else:
+            h = self._quantize_height(height)
+
         self.h.append(h)
         self.vLight.append(null_normal)
-
-        vertex_new_index = len(self.h) - 1
-
         # update triangle with new vertex index
         vertex_offset = old_triangle.index(vertex_next_index)
         old_triangle[vertex_offset] = vertex_new_index
@@ -159,6 +228,22 @@ class EditableTerrainTile(TerrainTile):
 
         return vertex_new_index
 
+    def rebuild_h(self):
+        if self._changed_heights:
+            new_max = max(self._changed_heights)
+            new_min = min(self._changed_heights)
+
+            deniv = new_max - new_min
+            b_height = old_div(MAX, deniv)
+            for i in range(len(self._changed_heights)):
+                changed_height = self._changed_heights[i]
+                h = int(round((changed_height - new_min) * b_height))
+                self.h[i] = h
+
+            self.header['minimumHeight'] = new_min
+            self.header['maximumHeight'] = new_max
+            self._changed_heights=[]
+
     def _rebuild_indices(self):
         size = len(self.indices)
         new_u = []
@@ -166,11 +251,6 @@ class EditableTerrainTile(TerrainTile):
         new_h = []
 
         new_indices = []
-        new_west_i = []
-        new_south_i = []
-        new_east_i = []
-        new_north_i = []
-
         new_v_light = []
         index_map = {}
 
@@ -190,19 +270,6 @@ class EditableTerrainTile(TerrainTile):
                 new_h.append(self.h[old_i])
 
                 new_v_light.append(self.vLight[old_i])
-
-                if old_i in self.westI:
-                    new_west_i.append(new_i)
-
-                if old_i in self.southI:
-                    new_south_i.append(new_i)
-
-                if old_i in self.eastI:
-                    new_east_i.append(new_i)
-
-                if old_i in self.northI:
-                    new_north_i.append(new_i)
-
             new_indices.append(new_i)
 
         if len(self.indices) == len(new_indices):
@@ -225,25 +292,10 @@ class EditableTerrainTile(TerrainTile):
         else:
             raise Exception("Array-Size of h-Values not equal")
 
-        if len(self.westI) == len(new_west_i):
-            self.westI = new_west_i
-        else:
-            raise Exception("Array-Size of westIndices not equal")
-
-        if len(self.southI) == len(new_south_i):
-            self.southI = new_south_i
-        else:
-            raise Exception("Array-Size of southIndices not equal")
-
-        if len(self.eastI) == len(new_east_i):
-            self.eastI = new_east_i
-        else:
-            raise Exception("Array-Size of eastIndices not equal")
-
-        if len(self.northI) == len(new_north_i):
-            self.northI = new_north_i
-        else:
-            raise Exception("Array-Size of northIndices not equal")
+        self.westI = self.get_edge_vertices('w')
+        self.southI = self.get_edge_vertices('s')
+        self.eastI = self.get_edge_vertices('e')
+        self.northI = self.get_edge_vertices('n')
 
         if len(self.vLight) == len(new_v_light):
             self.vLight = new_v_light
