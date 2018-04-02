@@ -153,6 +153,7 @@ def computeNormals(vertices, faces):
     numFaces = len(faces)
     normalsPerFace = [None] * numFaces
     areasPerFace = [0.0] * numFaces
+    anglesPerFace = {}
     normalsPerVertex = np.zeros(vertices.shape, dtype=vertices.dtype)
 
     for i in xrange(0, numFaces):
@@ -160,23 +161,53 @@ def computeNormals(vertices, faces):
         v0 = vertices[face[0]]
         v1 = vertices[face[1]]
         v2 = vertices[face[2]]
+        angles = calc_angles(face)
 
         normal = np.cross(c3d.subtract(v1, v0), c3d.subtract(v2, v0))
 
         area = triangleArea(v0, v1)
         areasPerFace[i] = area
+        anglesPerFace['{0}_{1}'.format(i, face[0])] = angles[0]
+        anglesPerFace['{0}_{1}'.format(i, face[1])] = angles[1]
+        anglesPerFace['{0}_{1}'.format(i, face[2])] = angles[2]
         normalsPerFace[i] = normal
 
     for i in xrange(0, numFaces):
         face = faces[i]
         weightedNormal = [c * areasPerFace[i] for c in normalsPerFace[i]]
         for j in face:
-            normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal)
+            normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal * anglesPerFace['{0}_{1}'.format(i, j)])
 
     for i in xrange(0, numVertices):
         normalsPerVertex[i] = c3d.normalize(normalsPerVertex[i])
 
     return normalsPerVertex
+
+
+def calc_angles(face):
+    import numpy as np
+
+    a = np.array(face[0])
+    b = np.array(face[1])
+    c = np.array(face[2])
+
+    ab = b - a
+    ac = c - a
+    ba = a - b
+    bc = c - b
+    ca = a - c
+    cb = b - c
+
+    cosine_angle_a = np.dot(ab, ac) / (np.linalg.norm(ab) * np.linalg.norm(ac))
+    angle_a = np.arccos(cosine_angle_a)
+
+    cosine_angle_b = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle_b = np.arccos(cosine_angle_b)
+
+    cosine_angle_c = np.dot(ca, cb) / (np.linalg.norm(ca) * np.linalg.norm(cb))
+    angle_c = np.arccos(cosine_angle_c)
+
+    return angle_a, angle_b, angle_c
 
 
 def gzipFileObject(data):
