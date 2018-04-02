@@ -244,14 +244,14 @@ class TileStitcher(object):
                     edge_connection.edge_info: edge_connection.get_side_vertex(edge_connection.edge_info)}
 
                 center_triangles = self._center.find_all_triangles_of(center_vertex_index)
-                weighted_normals = self._center.calculate_weighted_normals_for(center_triangles)
+                weighted_normals = self._center.calculate_weighted_normals_for(center_triangles, center_vertex_index)
 
                 neighbour_triangles = []
                 for neighbour_info, vertex_index in neighbour_vertex_indices.items():
                     neighbour_tile = self._neighbours[neighbour_info]
                     neighbour_triangles.extend(neighbour_tile.find_all_triangles_of(vertex_index))
 
-                weighted_normals += neighbour_tile.calculate_weighted_normals_for(neighbour_triangles)
+                weighted_normals += neighbour_tile.calculate_weighted_normals_for(neighbour_triangles, vertex_index)
 
                 normal_vertex = [0, 0, 0]
                 for w_n in weighted_normals:

@@ -142,7 +142,7 @@ class EditableTerrainTile(TerrainTile):
         vi3 = self.indices[offset + 2]
         return vi1, vi2, vi3
 
-    def calculate_weighted_normals_for(self, triangles):
+    def calculate_weighted_normals_for(self, triangles, base_vertex_index=None):
         weighted_normals = []
         for triangle in triangles:
             llh0 = self._uvh_to_llh(triangle[0])
@@ -155,7 +155,30 @@ class EditableTerrainTile(TerrainTile):
             normal = np.cross(c3d.subtract(v1, v0), c3d.subtract(v2, v0))
             area = triangleArea(v0, v1)
 
-            weighted_normals.append(normal * area)
+            angle = 1
+            if base_vertex_index:
+                a = np.array(triangle[0])
+                b = np.array(triangle[1])
+                c = np.array(triangle[2])
+                if base_vertex_index == triangle[0]:
+                    ab = b - a
+                    ac = c - a
+                    cosine_angle_a = np.dot(ab, ac) / (np.linalg.norm(ab) * np.linalg.norm(ac))
+                    angle = np.arccos(cosine_angle_a)
+
+                if base_vertex_index == triangle[0]:
+                    ba = a - b
+                    bc = c - b
+                    cosine_angle_b = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+                    angle = np.arccos(cosine_angle_b)
+
+                if base_vertex_index == triangle[0]:
+                    ca = a - c
+                    cb = b - c
+                    cosine_angle_c = np.dot(ca, cb) / (np.linalg.norm(ca) * np.linalg.norm(cb))
+                    angle = np.arccos(cosine_angle_c)
+
+            weighted_normals.append(normal * area * angle)
         return weighted_normals
 
     def toFile(self, file_path, gzipped=False):

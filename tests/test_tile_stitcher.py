@@ -283,11 +283,13 @@ class TestHarmonizeNormals(unittest.TestCase):
         # 15_\34762\25021
         # directory_base_path = '/export/data1/Test_DGMNormals/'
         directory_base_path = 'C:/Work/terrain/'
-        levels = [12, 13, 14, 15, 16]
+        #levels = [8,9,10,11,12, 13, 14, 15]
+        levels = [16]
 
         # act
         for level in levels:
-            directory_path = os.path.join(directory_base_path, str(level) + '_')
+            #directory_path = os.path.join(directory_base_path, str(level) + '_')
+            directory_path = os.path.join(directory_base_path, str(level))
             terrain_files = []
             for root, dirs, files in os.walk(directory_path, topdown=True):
                 for name in files:
@@ -311,7 +313,7 @@ class TestHarmonizeNormals(unittest.TestCase):
                         print("\tadding Neighbour {0}...".format(neighbour_path))
                         tile = load_tile(neighbour_path, n_x, n_y, level)
                         stitcher.add_neighbour(tile)
-                result_path = tile_path.replace('/{0}_'.format(level), '/edited_{0}'.format(level))
+                result_path = tile_path
                 stitcher.stitch_together()
                 target_dir_path = os.path.dirname(result_path)
                 if not os.path.exists(target_dir_path):
