@@ -188,7 +188,6 @@ class TileStitcher(object):
 
                 # wenn vertex in c und n, dann nur höhe(c und n) angleichen
                 if edge_connection.is_complete():
-                    # FIXME  Höhenberechnung führt möglicherweise zu Fehler, wenn neue Höhe kleiner/größer als MIN/MAX
                     self._update_height_to_even(edge_connection)
                 elif edge_connection.is_broken_on_neighbour():
                     # wenn vertex nur in c, dann triangle in n von vertex-1 und vertex+1 splitten

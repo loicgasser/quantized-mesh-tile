@@ -281,10 +281,10 @@ class TestHarmonizeNormals(unittest.TestCase):
     def test_traverse_over_directory(self):
         # arrange
         # 15_\34762\25021
-        # directory_base_path = '/export/data1/Test_DGMNormals/'
-        directory_base_path = 'C:/Work/terrain/'
-        #levels = [8,9,10,11,12, 13, 14, 15]
-        levels = [16]
+        directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_n/'
+        #directory_base_path = 'C:/Work/terrain/'
+        levels = [8,9,10,11,12, 13, 14, 15,16]
+    #levels = [16]
 
         # act
         for level in levels:
