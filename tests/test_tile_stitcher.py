@@ -4,11 +4,14 @@ import unittest
 
 import os
 import platform
+import scipy
+
 
 from quantized_mesh_tile import TerrainTile
 from quantized_mesh_tile.editable_terrain import EditableTerrainTile
 
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
+from quantized_mesh_tile.tile_rebuilder import TileRebuilder
 from quantized_mesh_tile.tile_stitcher import TileStitcher
 
 
@@ -282,13 +285,13 @@ class TestHarmonizeNormals(unittest.TestCase):
         # arrange
         # 15_\34762\25021
         directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_n/'
-        #directory_base_path = 'C:/Work/terrain/'
-        levels = [8,9,10,11,12, 13, 14, 15,16]
-    #levels = [16]
+        # directory_base_path = 'C:/Work/terrain/'
+        levels = [8, 9, 10, 11, 12, 13, 14, 15, 16]
+        # levels = [16]
 
         # act
         for level in levels:
-            #directory_path = os.path.join(directory_base_path, str(level) + '_')
+            # directory_path = os.path.join(directory_base_path, str(level) + '_')
             directory_path = os.path.join(directory_base_path, str(level))
             terrain_files = []
             for root, dirs, files in os.walk(directory_path, topdown=True):
@@ -322,3 +325,79 @@ class TestHarmonizeNormals(unittest.TestCase):
                 if os.path.exists(result_path):
                     os.remove(result_path)
                 center_tile.toFile(result_path)
+
+    def test_traverse_over_directory(self):
+        # arrange
+        # 15_\34762\25021
+        directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain/'
+        rebuild_directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_rebuild/'
+        # directory_base_path = 'C:/Work/terrain/'
+        levels = [8, 9, 10, 11, 12, 13, 14, 15, 16]
+        # levels = [16]
+
+        # act
+        for level in levels:
+            # directory_path = os.path.join(directory_base_path, str(level) + '_')
+            directory_path = os.path.join(directory_base_path, str(level))
+            terrain_files = []
+            for root, dirs, files in os.walk(directory_path, topdown=True):
+                for name in files:
+                    candidate_path = os.path.join(root, name)
+                    if candidate_path.endswith('.terrain'):
+                        terrain_files.append(candidate_path)
+
+            for tile_path in terrain_files:
+                y = int(os.path.basename(tile_path).split('.')[0])
+                x = int(os.path.basename(os.path.dirname(tile_path)))
+                print('processing {0} ...'.format(tile_path))
+                neighbours = get_neighbours(level, x, y)
+                center_tile = load_tile(tile_path, x, y, level)
+
+                rebuilder = TileRebuilder(center_tile)
+                for n, tile_info in neighbours.items():
+                    n_z, n_x, n_y = tile_info
+
+                    neighbour_path = os.path.join(directory_path, '%s/%s.terrain' % (n_x, n_y))
+                    if os.path.exists(neighbour_path):
+                        print("\tadding Neighbour {0}...".format(neighbour_path))
+                        tile = load_tile(neighbour_path, n_x, n_y, level)
+                        rebuilder.add_neighbour(tile)
+                result_path = tile_path.replace(directory_base_path,rebuild_directory_base_path)
+                try:
+                    rebuilder.rebuild_to(result_path)
+                    print("{0} succeeded!".format(tile_path))
+                except:
+                    print("{0} failed!".format(tile_path))
+
+
+    def test_read_csv(self):
+        from scipy.spatial import Delaunay
+        csv_path = "/tmp/tin.csv"
+        wkt_path = "/tmp/tin_convexhull.wkt"
+        points2d = []
+        heights=[]
+        with open(csv_path, mode='r') as csv:
+
+            for line in csv:
+                if 0 < len(line):
+                    p = line.split(',')
+                    if len(p) < 3:
+                        continue
+
+                    x = float(p[0])
+                    y = float(p[1])
+                    z = float(p[2])
+                    points2d.append([x, y])
+                    heights.append(z)
+
+        tri = Delaunay(points2d)
+        triangles = tri.simplices
+        print("Simplices: {0}".format(triangles))
+
+        with open(wkt_path, mode='w') as wkt:
+            for triangle in triangles:
+                v1 = "{0} {1} {2}".format(points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]])
+                v2 = "{0} {1} {2}".format(points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]])
+                v3 = "{0} {1} {2}".format(points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]])
+
+                wkt.write("POLYGON Z(({0},{1},{2})) \n".format(v1, v2, v3))
