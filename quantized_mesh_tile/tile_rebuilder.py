@@ -41,10 +41,10 @@ class TileRebuilder(object):
         points = []
         points2d = []
         heights = []
-        for edge_info, neighbour_tile in self._neighbours.items():
-            points.extend(neighbour_tile.get_edge_coordinates(edge_info))
-
         points.extend(self._center.getVerticesCoordinates())
+        for edge_info, neighbour_tile in self._neighbours.items():
+            opposite_edge_info = self.get_opposite_edge(edge_info)
+            points.extend(neighbour_tile.get_edge_coordinates(opposite_edge_info))
 
         for p in points:
             points2d.append([p[0], p[1]])
@@ -53,20 +53,32 @@ class TileRebuilder(object):
         tri = Delaunay(points2d)
         triangles3d = []
         triangles2d = tri.simplices
-        with open("{0}.points".format(path), mode='w') as debug:
 
-            for triangle in triangles2d:
-                v1 = [points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]]]
-                v2 = [points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]]]
-                v3 = [points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]]]
+        dir_path = os.path.dirname(path)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
 
-                dv1 = "{0} {1} {2}".format(points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]])
-                dv2 = "{0} {1} {2}".format(points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]])
-                dv3 = "{0} {1} {2}".format(points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]])
+        for triangle in triangles2d:
+            v1 = [points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]]]
+            v2 = [points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]]]
+            v3 = [points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]]]
 
-                debug.write("POLYGON Z(({0},{1},{2})) \n".format(dv1, dv2, dv3))
+            triangles3d.append([v1, v2, v3])
 
-                triangles3d.append([v1, v2, v3])
+        # with open("{0}.points".format(path), mode='w') as debug:
+        #
+        #     for triangle in triangles2d:
+        #         v1 = [points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]]]
+        #         v2 = [points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]]]
+        #         v3 = [points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]]]
+        #
+        #         dv1 = "{0} {1} {2}".format(points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]])
+        #         dv2 = "{0} {1} {2}".format(points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]])
+        #         dv3 = "{0} {1} {2}".format(points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]])
+        #
+        #         debug.write("POLYGON Z(({0},{1},{2})) \n".format(dv1, dv2, dv3))
+        #
+        #         triangles3d.append([v1, v2, v3])
         topology = TerrainTopology(geometries=triangles3d, hasLighting=True)
         tile = TerrainTile(topology=topology)
 
@@ -76,6 +88,15 @@ class TileRebuilder(object):
 
         if os.path.exists(path):
             os.remove(path)
-        #tile.toFile(path)
-        debug_tile = EditableTerrainTile(tile)
-        debug_tile.toWKT("{0}.wkt".format(path))
+        tile.toFile(path)
+
+    def get_opposite_edge(self, edge_info):
+        if edge_info is 'e':
+            return 'w'
+        if edge_info is 'w':
+            return 'e'
+        if edge_info is 'n':
+            return 's'
+        if edge_info is 's':
+            return 'n'
+        raise ValueError("{0} is not a Edge-Side-Value".format(edge_info))
