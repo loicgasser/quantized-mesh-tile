@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import unittest
 
 import os
@@ -329,9 +329,10 @@ class TestHarmonizeNormals(unittest.TestCase):
     def test_traverse_over_directory(self):
         # arrange
         # 15_\34762\25021
-        directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain/'
-        rebuild_directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_rebuild/'
-        # directory_base_path = 'C:/Work/terrain/'
+        # directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain/'
+        # rebuild_directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_rebuild/'
+        directory_base_path = 'C:/Work/terrain/'
+        rebuild_directory_base_path= 'C:/Work/terrain_rebuild/'
         levels = [8, 9, 10, 11, 12, 13, 14, 15, 16]
         # levels = [16]
 
@@ -366,8 +367,14 @@ class TestHarmonizeNormals(unittest.TestCase):
                 try:
                     rebuilder.rebuild_to(result_path)
                     print("{0} succeeded!".format(tile_path))
+                except OSError as err:
+                    print("OS error: {0}".format(err))
+                except ValueError:
+                    print("Could not convert data to an integer.")
                 except:
-                    print("{0} failed!".format(tile_path))
+                    print("Unexpected error:", sys.exc_info()[0])
+                    raise
+
 
 
     def test_read_csv(self):

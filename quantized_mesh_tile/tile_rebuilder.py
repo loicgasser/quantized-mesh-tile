@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 
 from quantized_mesh_tile import TerrainTile
+from quantized_mesh_tile.editable_terrain import EditableTerrainTile
 from quantized_mesh_tile.topology import TerrainTopology
 from operator import itemgetter
 from scipy.spatial import Delaunay
@@ -52,12 +53,20 @@ class TileRebuilder(object):
         tri = Delaunay(points2d)
         triangles3d = []
         triangles2d = tri.simplices
-        for triangle in triangles2d:
-            v1 = [points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]]]
-            v2 = [points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]]]
-            v3 = [points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]]]
+        with open("{0}.points".format(path), mode='w') as debug:
 
-        triangles3d.append([v1, v2, v3])
+            for triangle in triangles2d:
+                v1 = [points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]]]
+                v2 = [points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]]]
+                v3 = [points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]]]
+
+                dv1 = "{0} {1} {2}".format(points2d[triangle[0]][0], points2d[triangle[0]][1], heights[triangle[0]])
+                dv2 = "{0} {1} {2}".format(points2d[triangle[1]][0], points2d[triangle[1]][1], heights[triangle[1]])
+                dv3 = "{0} {1} {2}".format(points2d[triangle[2]][0], points2d[triangle[2]][1], heights[triangle[2]])
+
+                debug.write("POLYGON Z(({0},{1},{2})) \n".format(dv1, dv2, dv3))
+
+                triangles3d.append([v1, v2, v3])
         topology = TerrainTopology(geometries=triangles3d, hasLighting=True)
         tile = TerrainTile(topology=topology)
 
@@ -67,4 +76,6 @@ class TileRebuilder(object):
 
         if os.path.exists(path):
             os.remove(path)
-        tile.toFile(path)
+        #tile.toFile(path)
+        debug_tile = EditableTerrainTile(tile)
+        debug_tile.toWKT("{0}.wkt".format(path))
