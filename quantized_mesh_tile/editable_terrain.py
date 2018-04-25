@@ -34,6 +34,16 @@ class EditableTerrainTile(TerrainTile):
         indices = [i for i, x in enumerate(search_array) if x == edge_value]
         return indices
 
+    def get_edge_coordinates(self, edge):
+        edge_coordinates = []
+        coordinates = self.getVerticesCoordinates()
+        vertices = self.get_edge_vertices(edge)
+        for vertex in vertices:
+            edge_coordinates.append(coordinates[vertex])
+
+        return edge_coordinates
+
+
     def get_bounding_box(self):
         return {'west': self._west,
                 'east': self._east,
@@ -48,19 +58,19 @@ class EditableTerrainTile(TerrainTile):
         height_is_dirty = False
 
         if height < self.header['minimumHeight']:
-            print(
-                "Warning!!!! New Height for Vertex {0} is lower than minimumHeight.".format(
-                    height))
+            # print(
+            #     "Warning!!!! New Height for Vertex {0} is lower than minimumHeight.".format(
+            #         height))
             height_is_dirty = True
-            height = self.header['minimumHeight']
+            # height = self.header['minimumHeight']
 
         if self.header['maximumHeight'] < height:
-            print(
-                "Warning!!!! New Height for Vertex {0} is higher than maximumHeight.".format(
-                    height))
+            # print(
+            #     "Warning!!!! New Height for Vertex {0} is higher than maximumHeight.".format(
+            #         height))
             height_is_dirty = True
-            height = self.header['maximumHeight']
-        if height_is_dirty:
+            # height = self.header['maximumHeight']
+        if height_is_dirty or self._changed_heights:
             if not self._changed_heights:
                 self._changed_heights = [self._dequantize_height(x) for x in self.h]
             self._changed_heights[index] = height
@@ -261,11 +271,16 @@ class EditableTerrainTile(TerrainTile):
             for i in range(len(self._changed_heights)):
                 changed_height = self._changed_heights[i]
                 h = int(round((changed_height - new_min) * b_height))
+                if h < 0:
+                    h = 0
+                if h > MAX:
+                    h = MAX
                 self.h[i] = h
 
+            print('Change min/max-Height in Header from {0}/{1} to {2}/{3}'.format(self.header['minimumHeight'],self.header['maximumHeight'],new_min, new_max))
             self.header['minimumHeight'] = new_min
             self.header['maximumHeight'] = new_max
-            self._changed_heights=[]
+            self._changed_heights = []
 
     def _rebuild_indices(self):
         size = len(self.indices)

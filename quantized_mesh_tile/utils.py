@@ -176,7 +176,7 @@ def computeNormals(vertices, faces):
         face = faces[i]
         weightedNormal = [c * areasPerFace[i] for c in normalsPerFace[i]]
         for j in face:
-            normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal * anglesPerFace['{0}_{1}'.format(i, j)])
+            normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal )#* anglesPerFace['{0}_{1}'.format(i, j)])
 
     for i in xrange(0, numVertices):
         normalsPerVertex[i] = c3d.normalize(normalsPerVertex[i])
