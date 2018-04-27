@@ -6,7 +6,6 @@ import os
 import platform
 import scipy
 
-
 from quantized_mesh_tile import TerrainTile
 from quantized_mesh_tile.editable_terrain import EditableTerrainTile
 
@@ -281,17 +280,16 @@ class TestHarmonizeNormals(unittest.TestCase):
             os.remove(result_path)
         center_tile.toFile(result_path)
 
-    def test_traverse_over_directory(self):
+    def test_traverse_over_directory_and_stitch(self):
         # arrange
         # 15_\34762\25021
         directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_n/'
         # directory_base_path = 'C:/Work/terrain/'
-        levels = [8, 9, 10, 11, 12, 13, 14, 15, 16]
-        # levels = [16]
+        levels = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        # levels = [15]
 
         # act
         for level in levels:
-            # directory_path = os.path.join(directory_base_path, str(level) + '_')
             directory_path = os.path.join(directory_base_path, str(level))
             terrain_files = []
             for root, dirs, files in os.walk(directory_path, topdown=True):
@@ -307,7 +305,7 @@ class TestHarmonizeNormals(unittest.TestCase):
                 neighbours = get_neighbours_south_east(level, x, y)
                 center_tile = load_tile(tile_path, x, y, level)
 
-                stitcher = TileStitcher(center_tile)
+                stitcher = TileStitcher(center_tile, tile_path)
                 for n, tile_info in neighbours.items():
                     n_z, n_x, n_y = tile_info
 
@@ -315,24 +313,17 @@ class TestHarmonizeNormals(unittest.TestCase):
                     if os.path.exists(neighbour_path):
                         print("\tadding Neighbour {0}...".format(neighbour_path))
                         tile = load_tile(neighbour_path, n_x, n_y, level)
-                        stitcher.add_neighbour(tile)
-                result_path = tile_path
+                        stitcher.add_neighbour(tile, neighbour_path)
                 stitcher.stitch_together()
-                target_dir_path = os.path.dirname(result_path)
-                if not os.path.exists(target_dir_path):
-                    os.makedirs(target_dir_path)
+                stitcher.save()
 
-                if os.path.exists(result_path):
-                    os.remove(result_path)
-                center_tile.toFile(result_path)
-
-    def test_traverse_over_directory(self):
+    def test_traverse_over_directory_and_rebuild(self):
         # arrange
         # 15_\34762\25021
-        # directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain/'
-        # rebuild_directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_rebuild/'
-        directory_base_path = 'C:/Work/terrain/'
-        rebuild_directory_base_path= 'C:/Work/terrain_rebuild/'
+        directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain/'
+        rebuild_directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_rebuild/'
+        # directory_base_path = 'C:/Work/terrain/'
+        # rebuild_directory_base_path= 'C:/Work/terrain_rebuild/'
         levels = [8, 9, 10, 11, 12, 13, 14, 15, 16]
         # levels = [16]
 
@@ -363,7 +354,7 @@ class TestHarmonizeNormals(unittest.TestCase):
                         print("\tadding Neighbour {0}...".format(neighbour_path))
                         tile = load_tile(neighbour_path, n_x, n_y, level)
                         rebuilder.add_neighbour(tile)
-                result_path = tile_path.replace(directory_base_path,rebuild_directory_base_path)
+                result_path = tile_path.replace(directory_base_path, rebuild_directory_base_path)
                 try:
                     rebuilder.rebuild_to(result_path)
                     print("{0} succeeded!".format(tile_path))
@@ -375,14 +366,12 @@ class TestHarmonizeNormals(unittest.TestCase):
                     print("Unexpected error:", sys.exc_info()[0])
                     raise
 
-
-
     def test_read_csv(self):
         from scipy.spatial import Delaunay
         csv_path = "/tmp/tin.csv"
         wkt_path = "/tmp/tin_convexhull.wkt"
         points2d = []
-        heights=[]
+        heights = []
         with open(csv_path, mode='r') as csv:
 
             for line in csv:

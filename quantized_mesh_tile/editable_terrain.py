@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import math
+
 import numpy as np
 from future.utils import old_div
 
@@ -164,31 +166,8 @@ class EditableTerrainTile(TerrainTile):
 
             normal = np.cross(c3d.subtract(v1, v0), c3d.subtract(v2, v0))
             area = triangleArea(v0, v1)
+            weighted_normals.append(normal * area)
 
-            angle = 1
-            if base_vertex_index:
-                a = np.array(triangle[0])
-                b = np.array(triangle[1])
-                c = np.array(triangle[2])
-                if base_vertex_index == triangle[0]:
-                    ab = b - a
-                    ac = c - a
-                    cosine_angle_a = np.dot(ab, ac) / (np.linalg.norm(ab) * np.linalg.norm(ac))
-                    angle = np.arccos(cosine_angle_a)
-
-                if base_vertex_index == triangle[0]:
-                    ba = a - b
-                    bc = c - b
-                    cosine_angle_b = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-                    angle = np.arccos(cosine_angle_b)
-
-                if base_vertex_index == triangle[0]:
-                    ca = a - c
-                    cb = b - c
-                    cosine_angle_c = np.dot(ca, cb) / (np.linalg.norm(ca) * np.linalg.norm(cb))
-                    angle = np.arccos(cosine_angle_c)
-
-            weighted_normals.append(normal * area * angle)
         return weighted_normals
 
     def toFile(self, file_path, gzipped=False):
@@ -236,13 +215,13 @@ class EditableTerrainTile(TerrainTile):
         self.v.append(v)
         vertex_new_index = len(self.u) - 1
 
-        if height < self.header['minimumHeight'] or self.header['maximumHeight'] < height:
+        if self.header['minimumHeight']<height and height < self.header['maximumHeight']:
+            h = self._quantize_height(height)
+        else:
             if not self._changed_heights:
                 self._changed_heights = [self._dequantize_height(x) for x in self.h]
             self._changed_heights.append(height)
             h = 0
-        else:
-            h = self._quantize_height(height)
 
         self.h.append(h)
         self.vLight.append(null_normal)
@@ -263,8 +242,8 @@ class EditableTerrainTile(TerrainTile):
 
     def rebuild_h(self):
         if self._changed_heights:
-            new_max = max(self._changed_heights)
-            new_min = min(self._changed_heights)
+            new_max = math.ceil(max(self._changed_heights))
+            new_min = math.floor(min(self._changed_heights))
 
             deniv = new_max - new_min
             b_height = old_div(MAX, deniv)

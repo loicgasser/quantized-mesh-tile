@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+
+import os
 from operator import itemgetter
 from unittest.case import _AssertRaisesContext
 
@@ -73,9 +75,10 @@ class EdgeConnection(object):
 
 class TileStitcher(object):
 
-    def __init__(self, center_tile):
+    def __init__(self, center_tile, center_tile_path):
         self._center = center_tile
         self._neighbours = {}
+        self._tile_paths = {'c': center_tile_path}
 
     def _get_edge_connection(self, neighbour_tile):
         center_bbox = self._center.get_bounding_box()
@@ -199,9 +202,9 @@ class TileStitcher(object):
                         raise Exception('No triangle found for Vertex')
                     vertex_llh_insert = self._center.get_llh(edge_connection.get_side_vertex('c'))
                     vertex_new = self._neighbours[edge_connection.edge_info].split_triangle(triangle, vertex_prev,
-                                                                                               vertex_next,
-                                                                                               vertex_llh_insert)
-                    edge_connection.add_side(edge_connection.edge_info,vertex_new)
+                                                                                            vertex_next,
+                                                                                            vertex_llh_insert)
+                    edge_connection.add_side(edge_connection.edge_info, vertex_new)
                 else:
                     # wenn vertex nur in n, dann triangle in c von c-vertex-1 und c-vertex+1 splitten
                     vertex_prev = self._get_prev_vertex(index, edge, 'c')
@@ -211,10 +214,11 @@ class TileStitcher(object):
                     if triangle is None:
                         raise Exception('No triangle found for Vertex')
 
-                    vertex_llh_insert = self._neighbours[edge_connection.edge_info].get_llh(edge_connection.get_side_vertex(edge_connection.edge_info))
+                    vertex_llh_insert = self._neighbours[edge_connection.edge_info].get_llh(
+                        edge_connection.get_side_vertex(edge_connection.edge_info))
                     vertex_new = self._center.split_triangle(triangle, vertex_prev, vertex_next, vertex_llh_insert)
 
-                    edge_connection.add_side('c',vertex_new)
+                    edge_connection.add_side('c', vertex_new)
 
     def _harmonize_normals(self, neighbour_weighted_normals):
         for center_vertex_index, n_weighted_normals in neighbour_weighted_normals.items():
@@ -291,9 +295,10 @@ class TileStitcher(object):
             else:
                 self._neighbours[edge_info].set_height(vertex_indices[edge_info], height)
 
-    def add_neighbour(self, neighbour_tile):
+    def add_neighbour(self, neighbour_tile, neighbour_path):
         edge_connection = self._get_edge_connection(neighbour_tile)
         self._neighbours[edge_connection] = neighbour_tile
+        self._tile_paths[edge_connection] = neighbour_path
 
     def harmonize_normals(self):
         edge_vertices = self._find_edge_vertices()
@@ -313,3 +318,19 @@ class TileStitcher(object):
         scaled_u = int((u * base_resolution) / terrain_base_resolution)
         scaled_v = int((v * base_resolution) / terrain_base_resolution)
         return scaled_u, scaled_v
+
+    def save(self):
+        center_path = self._tile_paths['c']
+        target_dir_path = os.path.dirname(center_path)
+        if not os.path.exists(target_dir_path):
+            os.makedirs(target_dir_path)
+
+        if os.path.exists(center_path):
+            os.remove(center_path)
+
+        self._center.toFile(center_path)
+        for edge_info, neighbour_tile in self._neighbours.items():
+            neighbour_path = self._tile_paths[edge_info]
+            if os.path.exists(neighbour_path):
+                os.remove(neighbour_path)
+            neighbour_tile.toFile(neighbour_path)
