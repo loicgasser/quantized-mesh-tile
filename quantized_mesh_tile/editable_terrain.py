@@ -60,18 +60,10 @@ class EditableTerrainTile(TerrainTile):
         height_is_dirty = False
 
         if height < self.header['minimumHeight']:
-            # print(
-            #     "Warning!!!! New Height for Vertex {0} is lower than minimumHeight.".format(
-            #         height))
             height_is_dirty = True
-            # height = self.header['minimumHeight']
-
         if self.header['maximumHeight'] < height:
-            # print(
-            #     "Warning!!!! New Height for Vertex {0} is higher than maximumHeight.".format(
-            #         height))
             height_is_dirty = True
-            # height = self.header['maximumHeight']
+
         if height_is_dirty or self._changed_heights:
             if not self._changed_heights:
                 self._changed_heights = [self._dequantize_height(x) for x in self.h]
@@ -216,6 +208,8 @@ class EditableTerrainTile(TerrainTile):
         vertex_new_index = len(self.u) - 1
 
         if self.header['minimumHeight']<height and height < self.header['maximumHeight']:
+            if self._changed_heights:
+                self._changed_heights.append(height)
             h = self._quantize_height(height)
         else:
             if not self._changed_heights:

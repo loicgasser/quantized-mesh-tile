@@ -44,7 +44,7 @@ def load_tile(terrain_path, x, y, z):
 
 def get_tile(z, x, y):
     terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y))
-    return load_tile(terrain_path, x, y, z)
+    return load_tile(terrain_path, x, y, z), terrain_path
 
 
 class TestHarmonizeNormals(unittest.TestCase):
@@ -60,9 +60,9 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 14
 
         # act
-        center_tile = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
-        stitcher = TileStitcher(center_tile)
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
+        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        stitcher = TileStitcher(center_tile, center_path)
 
         # assert
         self.assertIsInstance(center_tile, TerrainTile)
@@ -79,9 +79,9 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 14
 
         # act
-        center_tile = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
-        harmonizer = TileStitcher(center_tile)
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
+        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        harmonizer = TileStitcher(center_tile, center_path)
         edge_connection = harmonizer._get_edge_connection(neighbour_tile)
 
         # assert
@@ -98,7 +98,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_y = 3127
         neighbour_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
         neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
 
         # act
@@ -124,7 +124,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_y = 3127
         neighbour_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
         neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
         if os.path.exists(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt')):
             os.remove(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt'))
@@ -170,7 +170,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_y = 3128
         neighbour_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
         neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
 
         # act
@@ -225,7 +225,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         south_y = 3126
         south_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
         east_tile = get_tile(east_z, east_x, east_y)
         south_tile = get_tile(south_z, south_x, south_y)
 
@@ -244,6 +244,43 @@ class TestHarmonizeNormals(unittest.TestCase):
         if os.path.exists(os.path.join(get_tmp_path(), '12_4346_3126.terrain')):
             os.remove(os.path.join(get_tmp_path(), '12_4346_3126.terrain'))
         south_tile.toFile(os.path.join(get_tmp_path(), '12_4346_3126.terrain'))
+
+        # assert
+        pass
+
+    def test_stitch_with_east_and_south_z14x17380y12516(self):
+        # arrange
+        center_x = 17380
+        center_y = 12516
+        center_z = 14
+
+        east_x = 17381
+        east_y = 12516
+        east_z = 14
+
+        south_x = 17380
+        south_y = 12515
+        south_z = 14
+
+        center_tile, center_path = get_tile(center_z, center_x, center_y)
+        east_tile, east_path = get_tile(east_z, east_x, east_y)
+        south_tile, south_path = get_tile(south_z, south_x, south_y)
+
+        # act
+        stitcher = TileStitcher(center_tile, center_path)
+        stitcher.add_neighbour(east_tile, east_path)
+        stitcher.add_neighbour(south_tile, south_path)
+        stitcher.stitch_together()
+
+        if os.path.exists(os.path.join(get_tmp_path(), '14_17380_12516.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '14_17380_12516.terrain'))
+        center_tile.toFile(os.path.join(get_tmp_path(), '14_17380_12516.terrain'))
+        if os.path.exists(os.path.join(get_tmp_path(), '14_17381_12516.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '14_17381_12516.terrain'))
+        east_tile.toFile(os.path.join(get_tmp_path(), '14_17381_12516.terrain'))
+        if os.path.exists(os.path.join(get_tmp_path(), '14_17380_12515.terrain')):
+            os.remove(os.path.join(get_tmp_path(), '14_17380_12515.terrain'))
+        south_tile.toFile(os.path.join(get_tmp_path(), '14_17380_12515.terrain'))
 
         # assert
         pass
