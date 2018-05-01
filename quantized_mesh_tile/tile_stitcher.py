@@ -4,12 +4,17 @@ from __future__ import print_function
 
 import os
 from operator import itemgetter
-from unittest.case import _AssertRaisesContext
-
 from . import cartesian3d as c3d, terrain
 
 
 def get_next_by_key_and_value(edge_connections, index, edge_side):
+    """
+
+    :param edge_connections:
+    :param index:
+    :param edge_side:
+    :return:
+    """
     if index == len(edge_connections):
         return edge_connections[index]
 
@@ -22,6 +27,13 @@ def get_next_by_key_and_value(edge_connections, index, edge_side):
 
 
 def get_previous_by_key_and_value(edge_connections, index, edge_side):
+    """
+
+    :param edge_connections:
+    :param index:
+    :param edge_side:
+    :return:
+    """
     if index == 0:
         return edge_connections[index]
 
@@ -34,6 +46,9 @@ def get_previous_by_key_and_value(edge_connections, index, edge_side):
 
 
 class EdgeConnection(object):
+    """
+    Property class, to store information of points/nodes which participating on a tile edge
+    """
     BOTH_SIDES = 2
     ONE_SIDE = 1
 
@@ -47,33 +62,58 @@ class EdgeConnection(object):
         return msg
 
     def add_side(self, edge_side, side_vertex):
+        """
+        Adds the side information to the edge-connection
+        :param edge_side: the participating side of the edge ('w','n','e','s')
+        :param side_vertex: the index of the vertex in the list of vertices of the given side (tile)
+        """
         self._side_vertices[edge_side] = side_vertex
 
     def get_side_vertex(self, edge_side):
+        """
+        Gets the index of the vertex in the list of vertices of the given side (tile)
+        :rtype: integer
+        :param edge_side: the participating side of the edge ('w','n','e','s')
+        :return: the index of the vertex, based on the given side
+        """
         return self._side_vertices[edge_side]
 
+    @property
     def get_side_vertices(self):
         return dict(self._side_vertices)
 
+    @property
     def is_complete(self):
         size = len(self._side_vertices.values())
         return EdgeConnection.BOTH_SIDES == size
 
+    @property
     def is_broken_on_center(self):
         return self.is_broken_on(self.edge_info)
 
+    @property
     def is_broken_on_neighbour(self):
         return self.is_broken_on('c')
 
     def is_broken_on(self, edge_side):
+        # type: (str) -> bool
         size = len(self._side_vertices.values())
         return EdgeConnection.ONE_SIDE == size and self._side_vertices.has_key(edge_side)
 
     def is_side(self, edge_side):
+        # type: (str) -> bool
+        """
+
+        :param edge_side: the participating side of the edge ('w','n','e','s')
+        :return: Returns True, if a vertex of the given side is registered in this connection
+        """
         return self._side_vertices.has_key(edge_side)
 
 
 class TileStitcher(object):
+    """
+
+    """
 
     def __init__(self, center_tile, center_tile_path):
         self._center = center_tile
@@ -189,11 +229,9 @@ class TileStitcher(object):
             for index in range(len(edge)):
                 edge_connection = edge[index]
 
-                # wenn vertex in c und n, dann nur höhe(c und n) angleichen
-                if edge_connection.is_complete():
+                if edge_connection.is_complete:
                     self._update_height_to_even(edge_connection)
-                elif edge_connection.is_broken_on_neighbour():
-                    # wenn vertex nur in c, dann triangle in n von vertex-1 und vertex+1 splitten
+                elif edge_connection.is_broken_on_neighbour:
                     vertex_prev = self._get_prev_vertex(index, edge, edge_connection.edge_info)
                     vertex_next = self._get_next_vertex(index, edge, edge_connection.edge_info)
 
@@ -279,7 +317,7 @@ class TileStitcher(object):
     def _update_height_to_even(self, edge_connection):
         center_vertex_index = edge_connection.get_side_vertex('c')
 
-        vertex_indices = edge_connection.get_side_vertices()
+        vertex_indices = edge_connection.get_side_vertices
 
         vertex_heights = []
         for edge_info, vertex_index in vertex_indices.items():

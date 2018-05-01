@@ -45,7 +45,6 @@ class EditableTerrainTile(TerrainTile):
 
         return edge_coordinates
 
-
     def get_bounding_box(self):
         return {'west': self._west,
                 'east': self._east,
@@ -207,7 +206,7 @@ class EditableTerrainTile(TerrainTile):
         self.v.append(v)
         vertex_new_index = len(self.u) - 1
 
-        if self.header['minimumHeight']<height and height < self.header['maximumHeight']:
+        if self.header['minimumHeight'] < height < self.header['maximumHeight']:
             if self._changed_heights:
                 self._changed_heights.append(height)
             h = self._quantize_height(height)
@@ -236,8 +235,8 @@ class EditableTerrainTile(TerrainTile):
 
     def rebuild_h(self):
         if self._changed_heights:
-            new_max = math.ceil(max(self._changed_heights))
-            new_min = math.floor(min(self._changed_heights))
+            new_max = max(self._changed_heights)
+            new_min = min(self._changed_heights)
 
             deniv = new_max - new_min
             b_height = old_div(MAX, deniv)
@@ -250,7 +249,6 @@ class EditableTerrainTile(TerrainTile):
                     h = MAX
                 self.h[i] = h
 
-            print('Change min/max-Height in Header from {0}/{1} to {2}/{3}'.format(self.header['minimumHeight'],self.header['maximumHeight'],new_min, new_max))
             self.header['minimumHeight'] = new_min
             self.header['maximumHeight'] = new_max
             self._changed_heights = []
@@ -308,10 +306,7 @@ class EditableTerrainTile(TerrainTile):
         self.eastI = self.get_edge_vertices('e')
         self.northI = self.get_edge_vertices('n')
 
-        if len(self.vLight) == len(new_v_light):
-            self.vLight = new_v_light
-        else:
-            raise Exception("Array-Size of northIndices not equal")
+        self.vLight = new_v_light
 
     def _quantize_latitude(self, latitude):
         b_lat = old_div(MAX, (self._north - self._south))

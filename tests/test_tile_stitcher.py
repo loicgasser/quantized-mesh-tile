@@ -85,7 +85,7 @@ class TestHarmonizeNormals(unittest.TestCase):
         edge_connection = harmonizer._get_edge_connection(neighbour_tile)
 
         # assert
-        self.assertIs(edge_connection, 'north')
+        self.assertIs(edge_connection, 'n')
         self.assertIsNotNone(edge_connection)
 
     def test_stitch_with_to_wkt(self):
@@ -99,17 +99,15 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 12
 
         center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
 
         # act
-        stitcher = TileStitcher(center_tile)
-        stitcher.stitch_with(neighbour_tile)
+        stitcher = TileStitcher(center_tile, center_path)
+        stitcher.add_neighbour(neighbour_tile,neighbour_path)
+        stitcher.stitch_together()
 
-        with open(os.path.join(get_tmp_path(), '12_4347_3128.wkt'), mode='w') as f:
-            center_tile.toWKT(f)
-
-        with open(os.path.join(get_tmp_path(), '12_4347_3127.wkt'), mode='w') as f:
-            neighbour_tile.toWKT(f)
+        center_tile.toWKT(os.path.join(get_tmp_path(), '12_4347_3128.wkt'))
+        neighbour_tile.toWKT(os.path.join(get_tmp_path(), '12_4347_3127.wkt'))
 
         # assert
         pass
@@ -125,18 +123,13 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 12
 
         center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
-        if os.path.exists(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt')):
-            os.remove(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt'))
-        center_tile.toWKT(os.path.join(get_tmp_path(), 'before_12_4347_3128.wkt'))
-        if os.path.exists(os.path.join(get_tmp_path(), 'before_12_4347_3127.wkt')):
-            os.remove(os.path.join(get_tmp_path(), 'before_12_4347_3127.wkt'))
-        neighbour_tile.toWKT(os.path.join(get_tmp_path(), 'before_12_4347_3127.wkt'))
+        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
 
         # act
-        stitcher = TileStitcher(center_tile)
-        stitcher.add_neighbour(neighbour_tile)
+        stitcher = TileStitcher(center_tile, center_path)
+        stitcher.add_neighbour(neighbour_tile, neighbour_path)
         stitcher.stitch_together()
+        stitcher.save()
 
         if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3128.terrain')):
             os.remove(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
@@ -171,20 +164,12 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 12
 
         center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
 
         # act
-        stitcher = TileStitcher(center_tile)
-        stitcher.add_neighbour(neighbour_tile)
+        stitcher = TileStitcher(center_tile,center_path)
+        stitcher.add_neighbour(neighbour_tile,neighbour_path)
         stitcher.stitch_together()
-
-        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3128.terrain')):
-            os.remove(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
-        center_tile.toFile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
-
-        if os.path.exists(os.path.join(get_tmp_path(), '12_4348_3128.terrain')):
-            os.remove(os.path.join(get_tmp_path(), '12_4348_3128.terrain'))
-        neighbour_tile.toFile(os.path.join(get_tmp_path(), '12_4348_3128.terrain'))
 
         # assert
         pass
