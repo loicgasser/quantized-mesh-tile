@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import math
+import os
 
 import numpy as np
 from future.utils import old_div
@@ -14,11 +14,19 @@ null_normal = [0, 0, 0]
 
 
 class EditableTerrainTile(TerrainTile):
+    """
+    Helper class to edit a given terrain tile on the edges.
+    Changes are possible on specified Heights, Triangles and Normals.
+
+
+    """
 
     def __init__(self, *args, **kwargs):
         super(EditableTerrainTile, self).__init__(*args, **kwargs)
         self.is_index_dirty = False
         self._changed_heights = []
+        self._file_path = None
+        self._gzipped = False
 
     def get_edge_vertices(self, edge):
         if 'w' == edge:
@@ -145,7 +153,13 @@ class EditableTerrainTile(TerrainTile):
         vi3 = self.indices[offset + 2]
         return vi1, vi2, vi3
 
-    def calculate_weighted_normals_for(self, triangles, base_vertex_index=None):
+    def calculate_weighted_normals_for(self, triangles):
+        """
+        Calculates normal vectors for the specified triangles, this normal vectors are not normalized and multiplicated with the area of participating triangle
+        :rtype: Array
+        :param triangles:
+        :return: Array of not normalized vectors [float,float,float]
+        """
         weighted_normals = []
         for triangle in triangles:
             llh0 = self._uvh_to_llh(triangle[0])
@@ -166,6 +180,33 @@ class EditableTerrainTile(TerrainTile):
             self._rebuild_indices()
 
         super(EditableTerrainTile, self).toFile(file_path, gzipped)
+
+    def fromFile(self, file_path, has_lighting=False, has_watermask=False, gzipped=False):
+        self._file_path = file_path
+        self._gzipped = gzipped
+
+        super(EditableTerrainTile, self).fromFile(file_path, has_lighting, gzipped)
+
+    def save(self):
+        target_dir_path = os.path.dirname(self._file_path)
+        if not os.path.exists(target_dir_path):
+            os.makedirs(target_dir_path)
+
+        if os.path.exists(self._file_path):
+            os.remove(self._file_path)
+
+        self.toFile(self._file_path, self._gzipped)
+
+    def save_to(self, target_dir_path, gzipped=False):
+        tile_file_name = os.path.basename(self._file_path)
+        if not os.path.exists(target_dir_path):
+            os.makedirs(target_dir_path)
+
+        file_path = os.path.join(target_dir_path, tile_file_name)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        self.toFile(file_path, gzipped)
 
     def toWKT(self, file_path):
 
@@ -332,7 +373,7 @@ class EditableTerrainTile(TerrainTile):
         return lerp(self.header['minimumHeight'], self.header['maximumHeight'], old_div(float(h), MAX))
 
     def _uvh_to_llh(self, index):
-        long = (lerp(self._west, self._east, old_div(float(self.u[index]), MAX)))
-        lat = (lerp(self._south, self._north, old_div(float(self.v[index]), MAX)))
+        longitude = (lerp(self._west, self._east, old_div(float(self.u[index]), MAX)))
+        latitude = (lerp(self._south, self._north, old_div(float(self.v[index]), MAX)))
         height = self._dequantize_height(self.h[index])
-        return long, lat, height
+        return longitude, latitude, height

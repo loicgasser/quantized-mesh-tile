@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
-import sys
 import unittest
-
 import os
 import platform
-import scipy
+
 
 from quantized_mesh_tile import TerrainTile
 from quantized_mesh_tile.editable_terrain import EditableTerrainTile
 
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
-from quantized_mesh_tile.tile_rebuilder import TileRebuilder
 from quantized_mesh_tile.tile_stitcher import TileStitcher
 
 
@@ -38,13 +35,13 @@ def load_tile(terrain_path, x, y, z):
     geodetic = GlobalGeodetic(True)
     [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
     tile = EditableTerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-    tile.fromFile(terrain_path, hasLighting=True)
+    tile.fromFile(terrain_path, has_lighting=True)
     return tile
 
 
 def get_tile(z, x, y):
     terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y))
-    return load_tile(terrain_path, x, y, z), terrain_path
+    return load_tile(terrain_path, x, y, z)
 
 
 class TestHarmonizeNormals(unittest.TestCase):
@@ -60,9 +57,9 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 14
 
         # act
-        center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
-        stitcher = TileStitcher(center_tile, center_path)
+        center_tile= get_tile(center_z, center_x, center_y)
+        neighbour_tile= get_tile(neighbour_z, neighbour_x, neighbour_y)
+        stitcher = TileStitcher(center_tile)
 
         # assert
         self.assertIsInstance(center_tile, TerrainTile)
@@ -79,16 +76,16 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_z = 14
 
         # act
-        center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
-        harmonizer = TileStitcher(center_tile, center_path)
+        center_tile= get_tile(center_z, center_x, center_y)
+        neighbour_tile= get_tile(neighbour_z, neighbour_x, neighbour_y)
+        harmonizer = TileStitcher(center_tile)
         edge_connection = harmonizer._get_edge_connection(neighbour_tile)
 
         # assert
         self.assertIs(edge_connection, 'n')
         self.assertIsNotNone(edge_connection)
 
-    def test_stitch_with_to_wkt(self):
+    def test_stitch_together_with_north_south(self):
         # arrange
         center_x = 4347
         center_y = 3128
@@ -98,46 +95,14 @@ class TestHarmonizeNormals(unittest.TestCase):
         neighbour_y = 3127
         neighbour_z = 12
 
-        center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        center_tile = get_tile(center_z, center_x, center_y)
+        neighbour_tile= get_tile(neighbour_z, neighbour_x, neighbour_y)
 
         # act
-        stitcher = TileStitcher(center_tile, center_path)
-        stitcher.add_neighbour(neighbour_tile,neighbour_path)
+        stitcher = TileStitcher(center_tile)
+        stitcher.add_neighbour(neighbour_tile)
         stitcher.stitch_together()
-
-        center_tile.toWKT(os.path.join(get_tmp_path(), '12_4347_3128.wkt'))
-        neighbour_tile.toWKT(os.path.join(get_tmp_path(), '12_4347_3127.wkt'))
-
-        # assert
-        pass
-
-    def test_stitch_with_north_south(self):
-        # arrange
-        center_x = 4347
-        center_y = 3128
-        center_z = 12
-
-        neighbour_x = 4347
-        neighbour_y = 3127
-        neighbour_z = 12
-
-        center_tile, center_path = get_tile(center_z, center_x, center_y)
-        neighbour_tile, neighbour_path = get_tile(neighbour_z, neighbour_x, neighbour_y)
-
-        # act
-        stitcher = TileStitcher(center_tile, center_path)
-        stitcher.add_neighbour(neighbour_tile, neighbour_path)
-        stitcher.stitch_together()
-        stitcher.save()
-
-        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3128.terrain')):
-            os.remove(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
-        center_tile.toFile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'))
-
-        if os.path.exists(os.path.join(get_tmp_path(), '12_4347_3127.terrain')):
-            os.remove(os.path.join(get_tmp_path(), '12_4347_3127.terrain'))
-        neighbour_tile.toFile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'))
+        stitcher.save_to(get_tmp_path())
 
         center_tile = load_tile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'), center_x, center_y, center_z)
         neighbour_tile = load_tile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'), neighbour_x, neighbour_y,
@@ -338,55 +303,6 @@ class TestHarmonizeNormals(unittest.TestCase):
                         stitcher.add_neighbour(tile, neighbour_path)
                 stitcher.stitch_together()
                 stitcher.save()
-
-    def test_traverse_over_directory_and_rebuild(self):
-        # arrange
-        # 15_\34762\25021
-        directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain/'
-        rebuild_directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_rebuild/'
-        # directory_base_path = 'C:/Work/terrain/'
-        # rebuild_directory_base_path= 'C:/Work/terrain_rebuild/'
-        levels = [8, 9, 10, 11, 12, 13, 14, 15, 16]
-        # levels = [16]
-
-        # act
-        for level in levels:
-            # directory_path = os.path.join(directory_base_path, str(level) + '_')
-            directory_path = os.path.join(directory_base_path, str(level))
-            terrain_files = []
-            for root, dirs, files in os.walk(directory_path, topdown=True):
-                for name in files:
-                    candidate_path = os.path.join(root, name)
-                    if candidate_path.endswith('.terrain'):
-                        terrain_files.append(candidate_path)
-
-            for tile_path in terrain_files:
-                y = int(os.path.basename(tile_path).split('.')[0])
-                x = int(os.path.basename(os.path.dirname(tile_path)))
-                print('processing {0} ...'.format(tile_path))
-                neighbours = get_neighbours(level, x, y)
-                center_tile = load_tile(tile_path, x, y, level)
-
-                rebuilder = TileRebuilder(center_tile)
-                for n, tile_info in neighbours.items():
-                    n_z, n_x, n_y = tile_info
-
-                    neighbour_path = os.path.join(directory_path, '%s/%s.terrain' % (n_x, n_y))
-                    if os.path.exists(neighbour_path):
-                        print("\tadding Neighbour {0}...".format(neighbour_path))
-                        tile = load_tile(neighbour_path, n_x, n_y, level)
-                        rebuilder.add_neighbour(tile)
-                result_path = tile_path.replace(directory_base_path, rebuild_directory_base_path)
-                try:
-                    rebuilder.rebuild_to(result_path)
-                    print("{0} succeeded!".format(tile_path))
-                except OSError as err:
-                    print("OS error: {0}".format(err))
-                except ValueError:
-                    print("Could not convert data to an integer.")
-                except:
-                    print("Unexpected error:", sys.exc_info()[0])
-                    raise
 
     def test_read_csv(self):
         from scipy.spatial import Delaunay
