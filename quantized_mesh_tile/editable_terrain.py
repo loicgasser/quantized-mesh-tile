@@ -29,6 +29,12 @@ class EditableTerrainTile(TerrainTile):
         self._gzipped = False
 
     def get_edge_vertices(self, edge):
+        """
+        Returns the indices of vertices on the defined edge.
+        :param edge: the edge of the tile. Specified by the flags 'w','n','e','s'
+                    for west-, north-, east- and  south-edge
+        :return: Array of integers
+        """
         if 'w' == edge:
             edge_value = 0
             search_array = self.u
@@ -45,6 +51,13 @@ class EditableTerrainTile(TerrainTile):
         return indices
 
     def get_edge_coordinates(self, edge):
+        # type: (string) -> Array
+        """
+        Returns a array of coordinate-tupels for all vertices on the specified edge
+        :return: Array of 3d coordinates (3-tupel of float; x,y,z)
+        :param edge: the edge of the tile. Specified by the flags 'w','n','e','s'
+                    for west-, north-, east- and  south-edge
+        """
         edge_coordinates = []
         coordinates = self.getVerticesCoordinates()
         vertices = self.get_edge_vertices(edge)
@@ -53,17 +66,37 @@ class EditableTerrainTile(TerrainTile):
 
         return edge_coordinates
 
+    @property
     def get_bounding_box(self):
+        """
+        Returns the bounding box of the tile in WGS84 degree
+        :return: Dictionary of floats for boundingbox of the tile with keys ['west','east','north', 'south']
+        """
         return {'west': self._west,
                 'east': self._east,
                 'north': self._north,
                 'south': self._south}
 
     def set_normal(self, index, normal):
+        # type: (int, Array) -> void
+        """
+        Sets the normal vector for the vertex which is specified with the index,
+        changing a normal vector causes a rebuild of all indices
+        :param index: index of the vertex
+        :param normal: the normal vector in the form [x,y,z]
+        """
         self.is_index_dirty = True
         self.vLight[index] = normal
 
     def set_height(self, index, height):
+        # type: (int, float) -> void
+        """
+        Sets the height for the vertex  which is specified with the index,
+        if the new height is out of the tile height range (min/max height),
+        all heights are requantized during save-process
+        :param index: index of the vertex
+        :param height:the height at the specified vertex index
+        """
         height_is_dirty = False
 
         if height < self.header['minimumHeight']:
@@ -79,42 +112,22 @@ class EditableTerrainTile(TerrainTile):
             self.h[index] = self._quantize_height(height)
 
     def get_height(self, index):
+        # type: (int) -> float
+        """
+        Returns the dequantized height at the specified vertex index
+        :param index: index of the vertex
+        :return: the height at the specified vertex
+        """
         height = self._dequantize_height(self.h[index])
         return height
 
-    def get_llh(self, index):
+    def get_coordinate(self, index):
+        """
+        Returns the dequantized coordinate at the specified vertex index
+        :param index: index of the vertex
+        :return: the wgs84 coordinate in the form [longitude, latitude, height]
+        """
         return self._uvh_to_llh(index)
-
-    def build_edge_triangles(self, edge):
-        if edge == 'e':
-            return self.build_triangles_for(self.eastI)
-        if edge == 'w':
-            return self.build_triangles_for(self.westI)
-        if edge == 'n':
-            return self.build_triangles_for(self.northI)
-        if edge == 's':
-            return self.build_triangles_for(self.southI)
-        return [None]
-
-    def build_triangles_for(self, vertices):
-        triangles = {}
-        for vertex in vertices:
-            triangle_id = self.get_triangle_of(vertex)
-            if not triangles.has_key(triangle_id):
-                triangles[triangle_id] = self.get_triangle(triangle_id)
-        return triangles
-
-    def get_triangle_of(self, vertex):
-        indices = iter(self.indices)
-        for i in range(0, len(self.indices) - 1, 3):
-            vi1 = next(indices)
-            vi2 = next(indices)
-            vi3 = next(indices)
-            triangle = (vi1, vi2, vi3)
-            if vertex in triangle:
-                return i / 3
-
-        return None
 
     def find_triangle_of(self, vertex_prev, vertex_next):
         indices = iter(self.indices)
@@ -129,14 +142,19 @@ class EditableTerrainTile(TerrainTile):
         return None
 
     def find_all_triangles_of(self, vertex):
+        """
+        Searches for all triangles of the specified vertex index and returns the list of triangles
+        :param vertex: the vertex index
+        :return: Array of triangle indices
+        """
         triangles = []
-        for triangle in self.get_triangles():
+        for triangle in self._get_triangles():
             if vertex in triangle:
                 triangles.append(triangle)
 
         return triangles
 
-    def get_triangles(self):
+    def _get_triangles(self):
         indices = iter(self.indices)
         for i in range(0, len(self.indices), 3):
             vi1 = next(indices)
@@ -146,6 +164,11 @@ class EditableTerrainTile(TerrainTile):
             yield triangle
 
     def get_triangle(self, index):
+        """
+        Returns the triangle for the specified index
+        :param index: the index of the triangle
+        :return: array of vertex indeces
+        """
         offset = index * 3
 
         vi1 = self.indices[offset]
@@ -188,6 +211,10 @@ class EditableTerrainTile(TerrainTile):
         super(EditableTerrainTile, self).fromFile(file_path, has_lighting, gzipped)
 
     def save(self):
+        """
+        persists the current state of the tile, no matter if changes were made, the old old state will be overwritten
+        :return: void
+        """
         target_dir_path = os.path.dirname(self._file_path)
         if not os.path.exists(target_dir_path):
             os.makedirs(target_dir_path)
@@ -198,6 +225,13 @@ class EditableTerrainTile(TerrainTile):
         self.toFile(self._file_path, self._gzipped)
 
     def save_to(self, target_dir_path, gzipped=False):
+        """
+        persists the current state of the tile into the specified directory path, if a tile with the same filename
+        is existing, then the new file will overwrite these
+        :param target_dir_path: the path to the directory
+        :param gzipped: whether or not the terrain tile should be gzipped
+        :return: void
+        """
         tile_file_name = os.path.basename(self._file_path)
         if not os.path.exists(target_dir_path):
             os.makedirs(target_dir_path)
@@ -209,6 +243,11 @@ class EditableTerrainTile(TerrainTile):
         self.toFile(file_path, gzipped)
 
     def toWKT(self, file_path):
+        """
+        for debug use. persists the tile data as wkt data, all vertices and triangles will be create as WGS84 POINT Z and POLYGON Z WKT-Strings
+        :param file_path: the file path where the wkt should be written
+        :return:void
+        """
 
         if self.is_index_dirty:
             self._rebuild_indices()
@@ -233,12 +272,25 @@ class EditableTerrainTile(TerrainTile):
 
                 stream.write("POLYGON Z(( {0}, {1}, {2})), {3}\n".format(v1_str, v2_str, v3_str, i))
 
-    def split_triangle(self, triangle_index, vertex_prev_index, vertex_next_index, vertex_insert):
+    def find_and_split_triangle(self, vertex_prev_index, vertex_next_index, coordinate_vertex_new):
+        """
+        Finds and splits the triangle, specified by the vertex_prev_index and vertex_next_index into two new triangles
+        with vertex_insert as new vertex of both triangles
+        :param vertex_prev_index:the index of the previous vertex for the new vertex
+        :param vertex_next_index:the index of the next vertex for the new vertex
+        :param coordinate_vertex_new: the wgs84 coordinate of the vertex between vertex_prev and vertex_next
+        :return: the index of the new vertex
+        """
+
+        triangle_index = self.find_triangle_of(vertex_prev_index, vertex_next_index)
+        if triangle_index is None:
+            raise Exception('No triangle found for Vertex')
+
         self.is_index_dirty = True
         old_triangle = list(self.get_triangle(triangle_index))
         new_triangle = list(old_triangle)
 
-        longitude, latitude, height = vertex_insert
+        longitude, latitude, height = coordinate_vertex_new
         u = self._quantize_longitude(longitude)
         v = self._quantize_latitude(latitude)
 
@@ -275,6 +327,9 @@ class EditableTerrainTile(TerrainTile):
         return vertex_new_index
 
     def rebuild_h(self):
+        """
+        Requantize the heights and sets min/max heights of this tile, if heights are changed, otherwise nothing will happens
+        """
         if self._changed_heights:
             new_max = max(self._changed_heights)
             new_min = min(self._changed_heights)
@@ -295,6 +350,9 @@ class EditableTerrainTile(TerrainTile):
             self._changed_heights = []
 
     def _rebuild_indices(self):
+        """
+        Private method, should only used internally if any edits on self.u, self.v, self.h  are made.
+        """
         size = len(self.indices)
         new_u = []
         new_v = []
@@ -350,16 +408,31 @@ class EditableTerrainTile(TerrainTile):
         self.vLight = new_v_light
 
     def _quantize_latitude(self, latitude):
+        """
+        Private helper method to convert latitude values to quantized tile (v) values
+        :param latitude: the wgs 84 latitude in degrees
+        :return: the quantized value (v)
+        """
         b_lat = old_div(MAX, (self._north - self._south))
         v = int(round((latitude - self._south) * b_lat))
         return v
 
     def _quantize_longitude(self, longitude):
+        """
+        Private helper method to convert longitude values to quantized tile (u) values
+        :param longitude: the wgs 84 longitude in degrees
+        :return: the quantized value (u)
+        """
         b_lon = old_div(MAX, (self._east - self._west))
         u = int(round((longitude - self._west) * b_lon))
         return u
 
     def _quantize_height(self, height):
+        """
+        Private helper method to convert height values to quantized tile (h) values
+        :param height: the wgs 84 height in ground units (meter)
+        :return: the quantized value (h)
+        """
         deniv = self.header['maximumHeight'] - self.header['minimumHeight']
         # In case a tile is completely flat
         if deniv == 0:
@@ -370,9 +443,19 @@ class EditableTerrainTile(TerrainTile):
         return h
 
     def _dequantize_height(self, h):
+        """
+        Private helper method to convert quantized tile (h) values to real world height values
+        :param h: the quantized height value
+        :return: the height in ground units (meter)
+        """
         return lerp(self.header['minimumHeight'], self.header['maximumHeight'], old_div(float(h), MAX))
 
     def _uvh_to_llh(self, index):
+        """
+        Private helper method to convert quantized tile vertex to wgs84 coordinate
+        :param index: the index of the specified vertex
+        :return: wgs84 coordinate
+        """
         longitude = (lerp(self._west, self._east, old_div(float(self.u[index]), MAX)))
         latitude = (lerp(self._south, self._north, old_div(float(self.v[index]), MAX)))
         height = self._dequantize_height(self.h[index])

@@ -118,8 +118,8 @@ class TileStitcher(object):
         self._neighbours = {}
 
     def _get_edge_connection(self, neighbour_tile):
-        center_bbox = self._center.get_bounding_box()
-        neighbour_bbox = neighbour_tile.get_bounding_box()
+        center_bbox = self._center.get_bounding_box
+        neighbour_bbox = neighbour_tile.get_bounding_box
 
         if center_bbox['west'] == neighbour_bbox['east']:
             return 'w'
@@ -132,8 +132,8 @@ class TileStitcher(object):
         return None
 
     def _get_edge_indices(self, neighbour_tile):
-        center_bbox = self._center.get_bounding_box()
-        neighbour_bbox = neighbour_tile.get_bounding_box()
+        center_bbox = self._center.get_bounding_box
+        neighbour_bbox = neighbour_tile.get_bounding_box
         center_vertices = []
         neighbour_vertices = []
         if center_bbox['west'] == neighbour_bbox['east']:
@@ -232,26 +232,19 @@ class TileStitcher(object):
                     vertex_prev = self._get_prev_vertex(index, edge, edge_connection.edge_info)
                     vertex_next = self._get_next_vertex(index, edge, edge_connection.edge_info)
 
-                    triangle = self._neighbours[edge_connection.edge_info].find_triangle_of(vertex_prev, vertex_next)
-                    if triangle is None:
-                        raise Exception('No triangle found for Vertex')
-                    vertex_llh_insert = self._center.get_llh(edge_connection.get_side_vertex('c'))
-                    vertex_new = self._neighbours[edge_connection.edge_info].split_triangle(triangle, vertex_prev,
-                                                                                            vertex_next,
-                                                                                            vertex_llh_insert)
+                    coordinate_new = self._center.get_coordinate(edge_connection.get_side_vertex('c'))
+                    vertex_new = self._neighbours[edge_connection.edge_info].find_and_split_triangle(vertex_prev,
+                                                                                                     vertex_next,
+                                                                                                     coordinate_new)
                     edge_connection.add_side(edge_connection.edge_info, vertex_new)
                 else:
                     # wenn vertex nur in n, dann triangle in c von c-vertex-1 und c-vertex+1 splitten
                     vertex_prev = self._get_prev_vertex(index, edge, 'c')
                     vertex_next = self._get_next_vertex(index, edge, 'c')
 
-                    triangle = self._center.find_triangle_of(vertex_prev, vertex_next)
-                    if triangle is None:
-                        raise Exception('No triangle found for Vertex')
-
-                    vertex_llh_insert = self._neighbours[edge_connection.edge_info].get_llh(
+                    coordinate_new = self._neighbours[edge_connection.edge_info].get_coordinate(
                         edge_connection.get_side_vertex(edge_connection.edge_info))
-                    vertex_new = self._center.split_triangle(triangle, vertex_prev, vertex_next, vertex_llh_insert)
+                    vertex_new = self._center.find_and_split_triangle(vertex_prev, vertex_next, coordinate_new)
 
                     edge_connection.add_side('c', vertex_new)
 
