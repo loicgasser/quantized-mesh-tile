@@ -72,7 +72,8 @@ def load_tile(terrain_path, x, y, z):
 
 class EdgeConnection(object):
     """
-    Property class, to store information of points/nodes which participating on a tile edge
+    Property class, to store information of points/nodes which
+    participating on a tile edge
     """
     BOTH_SIDES = 2
     ONE_SIDE = 1
@@ -90,7 +91,8 @@ class EdgeConnection(object):
         """
         Adds the side information to the edge-connection
         :param edge_side: the participating side of the edge ('w','n','e','s')
-        :param side_vertex: the index of the vertex in the list of vertices of the given side (tile)
+        :param side_vertex: the index of the vertex in the list of vertices of the
+        given side (tile)
         """
         self._side_vertices[edge_side] = side_vertex
 
@@ -123,16 +125,17 @@ class EdgeConnection(object):
     def is_broken_on(self, edge_side):
         # type: (str) -> bool
         size = len(self._side_vertices.values())
-        return EdgeConnection.ONE_SIDE == size and self._side_vertices.has_key(edge_side)
+        return EdgeConnection.ONE_SIDE == size and self.is_side(edge_side)
 
     def is_side(self, edge_side):
         # type: (str) -> bool
         """
 
         :param edge_side: the participating side of the edge ('w','n','e','s')
-        :return: Returns True, if a vertex of the given side is registered in this connection
+        :return: Returns True, if a vertex of the given side is registered in this
+        connection
         """
-        return self._side_vertices.has_key(edge_side)
+        return edge_side in self._side_vertices.keys()
 
 
 class TileStitcher(object):
@@ -148,7 +151,8 @@ class TileStitcher(object):
 
         Usage example::
         import os
-        from quantized_mesh_tile.tile_stitcher import TileStitcher, load_tile, get_neighbours_south_east
+        from quantized_mesh_tile.tile_stitcher import TileStitcher, load_tile,
+                                                        get_neighbours_south_east
 
         directory_base_path = '/data/terrain/'
         levels = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
@@ -175,7 +179,8 @@ class TileStitcher(object):
                 for n, tile_info in neighbours.items():
                     n_z, n_x, n_y = tile_info
 
-                    neighbour_path = os.path.join(directory_path, '%s/%s.terrain' % (n_x, n_y))
+                    neighbour_path = os.path.join(directory_path,
+                                    '%s/%s.terrain' % (n_x, n_y))
                     if os.path.exists(neighbour_path):
                         print("\tadding Neighbour {0}...".format(neighbour_path))
                         tile = tile_stitcher.load_tile(neighbour_path, n_x, n_y, level)
@@ -223,40 +228,44 @@ class TileStitcher(object):
         return center_vertices, neighbour_vertices
 
     def _calc_wheighted_normals(self, edge_connections):
-        weighted_normals = {}
+        normals = {}
         for edge in edge_connections:
             for index in range(len(edge)):
                 edge_connection = edge[index]
-
+                center_vertex = edge_connection.get_side_vertex('c')
+                side_vertex = edge_connection.get_side_vertex(edge_info)
+                neighbour = self._neighbours[side_vertex]
                 if edge_connection.is_complete:
                     weighted_normals = []
                     vertex_indices = edge_connection.get_side_vertices
                     for edge_info, vertex_index in vertex_indices.items():
                         if edge_info is not 'c':
-                            triangles = self._neighbours[
-                                edge_connection.get_side_vertex(edge_info)].find_all_triangles_of(vertex_index)
+                            triangles = neighbour.find_all_triangles_of(vertex_index)
                             weighted_normals.extend(
-                                self._neighbours[
-                                    edge_connection.get_side_vertex(edge_info)].calculate_weighted_normals_for(
-                                    triangles))
-                    weighted_normals[edge_connection.get_side_vertex('c')] = weighted_normals
+                                neighbour.calculate_weighted_normals_for(triangles))
+
+                    normals[center_vertex] = weighted_normals
 
                 elif edge_connection.is_broken_on_neighbour:
-                    # wenn vertex nur in c, dann triangle in n von vertex-1 und vertex+1 finden und die gewichtete Normale berechnen
-                    vertex_prev = self._get_prev_vertex(index, edge, edge_connection.edge_info)
-                    vertex_next = self._get_next_vertex(index, edge, edge_connection.edge_info)
-                    triangle_index = self._neighbours[edge_connection.get_side_vertex(edge_info)].find_triangle_of(
-                        vertex_prev, vertex_next)
+                    # wenn vertex nur in c,
+                    # dann triangle in n von vertex-1 und vertex+1 finden
+                    # und die gewichtete Normale berechnen
+                    info = edge_connection.edge_info
+                    vertex_prev = self._get_prev_vertex(index, edge, info)
+                    vertex_next = self._get_next_vertex(index, edge, info)
+                    triangle_index = neighbour.find_triangle_of(vertex_prev, vertex_next)
                     if not triangle_index:
-                        print(" No Triangle found for {0}|{1} in {2} !".format(vertex_prev, vertex_next, edge_info))
-                    else:
-                        triangle = self._neighbours[edge_connection.get_side_vertex(edge_info)].get_triangle(
-                            triangle_index)
-                        weighted_normals = self._neighbours[
-                            edge_connection.get_side_vertex(edge_info)].calculate_weighted_normals_for([triangle])
-                        weighted_normals[edge_connection.get_side_vertex(edge_info)] = weighted_normals
+                        print(" No Triangle found for {0}|{1} in {2} !".format(
+                            vertex_prev,
+                            vertex_next,
+                            edge_info))
+                        continue
 
-        return weighted_normals
+                    triangles = [neighbour.get_triangle(triangle_index)]
+                    weighted_normals = neighbour.calculate_weighted_normals_for(triangles)
+                    normals[side_vertex] = weighted_normals
+
+        return normals
 
     def _find_edge_connections(self):
 
@@ -275,7 +284,8 @@ class TileStitcher(object):
                 edge_connection.add_side('c', center_index)
                 single_edge_vertices[c_key] = edge_connection
             for neighbour_index in neighbour_indices:
-                n_uv = (neighbour_tile.u[neighbour_index], neighbour_tile.v[neighbour_index])
+                n_uv = (neighbour_tile.u[neighbour_index],
+                        neighbour_tile.v[neighbour_index])
                 n_key = '{}_{:05}'.format(edge_info, n_uv[edge_index])
 
                 if single_edge_vertices.has_key(n_key):
@@ -285,7 +295,9 @@ class TileStitcher(object):
                     edge_connection.add_side(edge_info, neighbour_index)
                     single_edge_vertices[n_key] = edge_connection
 
-            single_edge_connections = sorted(single_edge_vertices.values(), key=lambda x: x.edge_index, reverse=False)
+            single_edge_connections = sorted(single_edge_vertices.values(),
+                                             key=lambda x: x.edge_index,
+                                             reverse=False)
 
             edge_connections.append(single_edge_connections)
 
@@ -297,33 +309,40 @@ class TileStitcher(object):
             for index in range(len(edge)):
                 edge_connection = edge[index]
 
+                edge_info = edge_connection.edge_info
+                neighbour = self._neighbours[edge_info]
                 if edge_connection.is_complete:
                     self._update_height_to_even(edge_connection)
                 elif edge_connection.is_broken_on_neighbour:
-                    vertex_prev = self._get_prev_vertex(index, edge, edge_connection.edge_info)
-                    vertex_next = self._get_next_vertex(index, edge, edge_connection.edge_info)
+                    vertex_prev = self._get_prev_vertex(index, edge, edge_info)
+                    vertex_next = self._get_next_vertex(index, edge, edge_info)
 
-                    coordinate_new = self._center.get_coordinate(edge_connection.get_side_vertex('c'))
-                    vertex_new = self._neighbours[edge_connection.edge_info].find_and_split_triangle(vertex_prev,
-                                                                                                     vertex_next,
-                                                                                                     coordinate_new)
-                    edge_connection.add_side(edge_connection.edge_info, vertex_new)
+                    coordinate_new = self._center.get_coordinate(
+                        edge_connection.get_side_vertex('c'))
+                    vertex_new = neighbour.find_and_split_triangle(vertex_prev,
+                                                                   vertex_next,
+                                                                   coordinate_new)
+                    edge_connection.add_side(edge_info, vertex_new)
                 else:
-                    # wenn vertex nur in n, dann triangle in c von c-vertex-1 und c-vertex+1 splitten
+                    # wenn vertex nur in n, dann triangle in c
+                    # von c-vertex-1 und c-vertex+1 splitten
                     vertex_prev = self._get_prev_vertex(index, edge, 'c')
                     vertex_next = self._get_next_vertex(index, edge, 'c')
 
-                    coordinate_new = self._neighbours[edge_connection.edge_info].get_coordinate(
-                        edge_connection.get_side_vertex(edge_connection.edge_info))
-                    vertex_new = self._center.find_and_split_triangle(vertex_prev, vertex_next, coordinate_new)
+                    coordinate_new = neighbour.get_coordinate(
+                        edge_connection.get_side_vertex(edge_info))
+                    vertex_new = self._center.find_and_split_triangle(vertex_prev,
+                                                                      vertex_next,
+                                                                      coordinate_new)
 
                     edge_connection.add_side('c', vertex_new)
 
     def _harmonize_normals(self, neighbour_weighted_normals):
         for center_vertex_index, n_weighted_normals in neighbour_weighted_normals.items():
 
-            center_triangles = self._center.find_all_triangles_of(center_vertex_index)
-            weighted_normals = self._center.calculate_weighted_normals_for(center_triangles)
+            center = self._center
+            center_triangles = center.find_all_triangles_of(center_vertex_index)
+            weighted_normals = center.calculate_weighted_normals_for(center_triangles)
             weighted_normals.extend(n_weighted_normals)
 
             normal_vertex = [0, 0, 0]
@@ -331,10 +350,11 @@ class TileStitcher(object):
                 normal_vertex = c3d.add(normal_vertex, w_n)
 
             normal_vertex = c3d.normalize(normal_vertex)
-            self._center.set_normal(center_vertex_index, normal_vertex)
+            center.set_normal(center_vertex_index, normal_vertex)
 
     def _build_normals(self, edge_connections):
-        self._center.rebuild_h()
+        center = self._center
+        center.rebuild_h()
         for n in self._neighbours.values():
             n.rebuild_h()
 
@@ -342,38 +362,44 @@ class TileStitcher(object):
             for edge_connection in edge:
                 center_vertex_index = edge_connection.get_side_vertex('c')
 
-                neighbour_vertex_indices = {
-                    edge_connection.edge_info: edge_connection.get_side_vertex(edge_connection.edge_info)}
+                side_vertex = edge_connection.get_side_vertex(edge_connection.edge_info)
+                neighbour_vertex_indices = {edge_connection.edge_info: side_vertex}
 
-                center_triangles = self._center.find_all_triangles_of(center_vertex_index)
-                weighted_normals = self._center.calculate_weighted_normals_for(center_triangles)
+                center_triangles = center.find_all_triangles_of(center_vertex_index)
+                normals = center.calculate_weighted_normals_for(center_triangles)
 
                 neighbour_triangles = []
                 for neighbour_info, vertex_index in neighbour_vertex_indices.items():
                     neighbour_tile = self._neighbours[neighbour_info]
-                    neighbour_triangles.extend(neighbour_tile.find_all_triangles_of(vertex_index))
+                    triangles = neighbour_tile.find_all_triangles_of(vertex_index)
+                    neighbour_triangles.extend(triangles)
 
-                weighted_normals += neighbour_tile.calculate_weighted_normals_for(neighbour_triangles)
+                normals += neighbour_tile.calculate_weighted_normals_for(
+                            neighbour_triangles)
 
                 normal_vertex = [0, 0, 0]
-                for w_n in weighted_normals:
+                for w_n in normals:
                     normal_vertex = c3d.add(normal_vertex, w_n)
 
                 normal_vertex = c3d.normalize(normal_vertex)
-                self._center.set_normal(center_vertex_index, normal_vertex)
+                center.set_normal(center_vertex_index, normal_vertex)
                 for neighbour_info, vertex_index in neighbour_vertex_indices.items():
                     neighbour_tile = self._neighbours[neighbour_info]
                     neighbour_tile.set_normal(vertex_index, normal_vertex)
 
     @staticmethod
     def _get_next_vertex(index, edge_connections, edge_side):
-        edge_connection_next = get_next_by_key_and_value(edge_connections, index, edge_side)
+        edge_connection_next = get_next_by_key_and_value(edge_connections,
+                                                         index,
+                                                         edge_side)
         vertex_next = edge_connection_next.get_side_vertex(edge_side)
         return vertex_next
 
     @staticmethod
     def _get_prev_vertex(index, edge_connections, edge_side):
-        edge_connection_prev = get_previous_by_key_and_value(edge_connections, index, edge_side)
+        edge_connection_prev = get_previous_by_key_and_value(edge_connections,
+                                                             index,
+                                                             edge_side)
         vertex_prev = edge_connection_prev.get_side_vertex(edge_side)
         return vertex_prev
 
@@ -387,14 +413,16 @@ class TileStitcher(object):
             if edge_info is 'c':
                 vertex_heights.append(self._center.get_height(vertex_index))
             else:
-                vertex_heights.append(self._neighbours[edge_info].get_height(vertex_index))
+                neighbour = self._neighbours[edge_info]
+                vertex_heights.append(neighbour.get_height(vertex_index))
 
         height = sum(vertex_heights) / len(vertex_heights)
         for edge_info in vertex_indices:
             if edge_info is 'c':
                 self._center.set_height(center_vertex_index, height)
             else:
-                self._neighbours[edge_info].set_height(vertex_indices[edge_info], height)
+                neighbour = self._neighbours[edge_info]
+                neighbour.set_height(vertex_indices[edge_info], height)
 
     def add_neighbour(self, neighbour_tile):
         edge_connection = self._get_edge_connection(neighbour_tile)
