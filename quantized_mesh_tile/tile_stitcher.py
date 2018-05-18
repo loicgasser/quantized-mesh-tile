@@ -2,6 +2,9 @@
 
 from __future__ import print_function
 
+from quantized_mesh_tile.editable_terrain import EditableTerrainTile
+from quantized_mesh_tile.global_geodetic import GlobalGeodetic
+
 from . import cartesian3d as c3d
 
 
@@ -41,6 +44,30 @@ def get_previous_by_key_and_value(edge_connections, index, edge_side):
         edge_connection_prev = edge_connections[index]
 
     return edge_connection_prev
+
+
+def get_neighbours(z, x, y):
+    return {'west': (z, x - 1, y),
+            'north': (z, x, y + 1),
+            'south': (z, x, y - 1),
+            'east': (z, x + 1, y)}
+
+
+def get_neighbours_south_east(z, x, y):
+    return {'south': (z, x, y - 1),
+            'east': (z, x + 1, y)}
+
+
+def load_tile(terrain_path, x, y, z):
+    """
+
+    :rtype: EditableTerrainTile
+    """
+    geodetic = GlobalGeodetic(True)
+    [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
+    tile = EditableTerrainTile(west=minx, south=miny, east=maxx, north=maxy)
+    tile.fromFile(terrain_path, has_lighting=True)
+    return tile
 
 
 class EdgeConnection(object):
@@ -110,7 +137,51 @@ class EdgeConnection(object):
 
 class TileStitcher(object):
     """
+        The worker class to stitch terrain files together
 
+        Constructor arguments:
+
+        ''center_tile''
+            the the center tile, from which the neighbouring edges are stitched,
+            if neighbour tiles are added
+
+
+        Usage example::
+        import os
+        from quantized_mesh_tile.tile_stitcher import TileStitcher, load_tile, get_neighbours_south_east
+
+        directory_base_path = '/data/terrain/'
+        levels = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+        #walk through level and file hierarchy
+        for level in levels:
+            directory_path = os.path.join(directory_base_path, str(level))
+            terrain_files = []
+            for root, dirs, files in os.walk(directory_path, topdown=True):
+                for name in files:
+                    candidate_path = os.path.join(root, name)
+                    if candidate_path.endswith('.terrain'):
+                        terrain_files.append(candidate_path)
+
+            for tile_path in terrain_files:
+
+                y = int(os.path.basename(tile_path).split('.')[0])
+                x = int(os.path.basename(os.path.dirname(tile_path)))
+                print('processing {0} ...'.format(tile_path))
+                neighbours = get_neighbours_south_east(level, x, y)
+                center_tile = tile_stitcher.load_tile(tile_path, x, y, level)
+
+                stitcher = TileStitcher(center_tile)
+                for n, tile_info in neighbours.items():
+                    n_z, n_x, n_y = tile_info
+
+                    neighbour_path = os.path.join(directory_path, '%s/%s.terrain' % (n_x, n_y))
+                    if os.path.exists(neighbour_path):
+                        print("\tadding Neighbour {0}...".format(neighbour_path))
+                        tile = tile_stitcher.load_tile(neighbour_path, n_x, n_y, level)
+                        stitcher.add_neighbour(tile)
+                stitcher.stitch_together()
+                stitcher.save()
     """
 
     def __init__(self, center_tile):

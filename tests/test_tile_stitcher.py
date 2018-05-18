@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-import unittest
 import os
 import platform
+import unittest
 
-from quantized_mesh_tile import TerrainTile
-from quantized_mesh_tile.editable_terrain import EditableTerrainTile
-
-from quantized_mesh_tile.global_geodetic import GlobalGeodetic
+from quantized_mesh_tile import TerrainTile, tile_stitcher
 from quantized_mesh_tile.tile_stitcher import TileStitcher
 
 
@@ -14,11 +11,6 @@ def get_neighbours(z, x, y):
     return {'west': (z, x - 1, y),
             'north': (z, x, y + 1),
             'south': (z, x, y - 1),
-            'east': (z, x + 1, y)}
-
-
-def get_neighbours_south_east(z, x, y):
-    return {'south': (z, x, y - 1),
             'east': (z, x + 1, y)}
 
 
@@ -30,21 +22,9 @@ def get_tmp_path():
         return '/tmp/'
 
 
-def load_tile(terrain_path, x, y, z):
-    """
-
-    :rtype: EditableTerrainTile
-    """
-    geodetic = GlobalGeodetic(True)
-    [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
-    tile = EditableTerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-    tile.fromFile(terrain_path, has_lighting=True)
-    return tile
-
-
 def get_tile(z, x, y):
     terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y))
-    return load_tile(terrain_path, x, y, z)
+    return tile_stitcher.load_tile(terrain_path, x, y, z)
 
 
 class TestTileStitcher(unittest.TestCase):
@@ -108,11 +88,11 @@ class TestTileStitcher(unittest.TestCase):
         stitcher.save_to(get_tmp_path())
 
         # assert
-        center_tile = load_tile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
+        center_tile = tile_stitcher.load_tile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
                                 center_x,
                                 center_y,
                                 center_z)
-        neighbour_tile = load_tile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
+        neighbour_tile = tile_stitcher.load_tile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
                                    neighbour_x,
                                    neighbour_y,
                                    neighbour_z)
@@ -210,40 +190,3 @@ class TestTileStitcher(unittest.TestCase):
 
         self.assertTrue(center_to_east_vertices_count == east_vertices_count)
         self.assertTrue(center_to_south_vertices_count == south_vertices_count)
-
-    def itest_traverse_over_directory_and_stitch(self):
-        # arrange
-
-        directory_base_path = '/export/home/schle_th/github/cesium/TestData/terrain_n/'
-        # directory_base_path = 'C:/Work/terrain/'
-        levels = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        # levels = [15]
-
-        # act
-        for level in levels:
-            directory_path = os.path.join(directory_base_path, str(level))
-            terrain_files = []
-            for root, dirs, files in os.walk(directory_path, topdown=True):
-                for name in files:
-                    candidate_path = os.path.join(root, name)
-                    if candidate_path.endswith('.terrain'):
-                        terrain_files.append(candidate_path)
-
-            for tile_path in terrain_files:
-                y = int(os.path.basename(tile_path).split('.')[0])
-                x = int(os.path.basename(os.path.dirname(tile_path)))
-                print('processing {0} ...'.format(tile_path))
-                neighbours = get_neighbours_south_east(level, x, y)
-                center_tile = load_tile(tile_path, x, y, level)
-
-                stitcher = TileStitcher(center_tile, tile_path)
-                for n, tile_info in neighbours.items():
-                    n_z, n_x, n_y = tile_info
-
-                    neighbour_path = os.path.join(directory_path, '%s/%s.terrain' % (n_x, n_y))
-                    if os.path.exists(neighbour_path):
-                        print("\tadding Neighbour {0}...".format(neighbour_path))
-                        tile = load_tile(neighbour_path, n_x, n_y, level)
-                        stitcher.add_neighbour(tile, neighbour_path)
-                stitcher.stitch_together()
-                stitcher.save()
