@@ -233,12 +233,13 @@ class TileStitcher(object):
             for index in range(len(edge)):
                 edge_connection = edge[index]
                 center_vertex = edge_connection.get_side_vertex('c')
-                side_vertex = edge_connection.get_side_vertex(edge_info)
-                neighbour = self._neighbours[side_vertex]
+
                 if edge_connection.is_complete:
                     weighted_normals = []
                     vertex_indices = edge_connection.get_side_vertices
                     for edge_info, vertex_index in vertex_indices.items():
+                        side_vertex = edge_connection.get_side_vertex(edge_info)
+                        neighbour = self._neighbours[side_vertex]
                         if edge_info is not 'c':
                             triangles = neighbour.find_all_triangles_of(vertex_index)
                             weighted_normals.extend(
@@ -253,12 +254,14 @@ class TileStitcher(object):
                     info = edge_connection.edge_info
                     vertex_prev = self._get_prev_vertex(index, edge, info)
                     vertex_next = self._get_next_vertex(index, edge, info)
+                    side_vertex = edge_connection.get_side_vertex(info)
+                    neighbour = self._neighbours[side_vertex]
                     triangle_index = neighbour.find_triangle_of(vertex_prev, vertex_next)
                     if not triangle_index:
                         print(" No Triangle found for {0}|{1} in {2} !".format(
                             vertex_prev,
                             vertex_next,
-                            edge_info))
+                            info))
                         continue
 
                     triangles = [neighbour.get_triangle(triangle_index)]
@@ -288,7 +291,7 @@ class TileStitcher(object):
                         neighbour_tile.v[neighbour_index])
                 n_key = '{}_{:05}'.format(edge_info, n_uv[edge_index])
 
-                if single_edge_vertices.has_key(n_key):
+                if n_key in single_edge_vertices.keys():
                     single_edge_vertices[n_key].add_side(edge_info, neighbour_index)
                 else:
                     edge_connection = EdgeConnection(edge_info, n_uv[edge_index])
@@ -368,14 +371,11 @@ class TileStitcher(object):
                 center_triangles = center.find_all_triangles_of(center_vertex_index)
                 normals = center.calculate_weighted_normals_for(center_triangles)
 
-                neighbour_triangles = []
                 for neighbour_info, vertex_index in neighbour_vertex_indices.items():
                     neighbour_tile = self._neighbours[neighbour_info]
                     triangles = neighbour_tile.find_all_triangles_of(vertex_index)
-                    neighbour_triangles.extend(triangles)
-
-                normals += neighbour_tile.calculate_weighted_normals_for(
-                            neighbour_triangles)
+                    normals.extend(neighbour_tile.calculate_weighted_normals_for(
+                        triangles))
 
                 normal_vertex = [0, 0, 0]
                 for w_n in normals:
