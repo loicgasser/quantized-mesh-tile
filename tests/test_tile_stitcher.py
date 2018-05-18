@@ -23,7 +23,8 @@ def get_tmp_path():
 
 
 def get_tile(z, x, y):
-    terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/%s_%s_%s.terrain' % (z, x, y))
+    terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'data/%s_%s_%s.terrain' % (z, x, y))
     return tile_stitcher.load_tile(terrain_path, x, y, z)
 
 
@@ -42,7 +43,7 @@ class TestTileStitcher(unittest.TestCase):
         # act
         center_tile = get_tile(center_z, center_x, center_y)
         neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
-        stitcher = TileStitcher(center_tile)
+        TileStitcher(center_tile)
 
         # assert
         self.assertIsInstance(center_tile, TerrainTile)
@@ -88,14 +89,16 @@ class TestTileStitcher(unittest.TestCase):
         stitcher.save_to(get_tmp_path())
 
         # assert
-        center_tile = tile_stitcher.load_tile(os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
+        center_tile = tile_stitcher.load_tile(
+                                os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
                                 center_x,
                                 center_y,
                                 center_z)
-        neighbour_tile = tile_stitcher.load_tile(os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
-                                   neighbour_x,
-                                   neighbour_y,
-                                   neighbour_z)
+        neighbour_tile = tile_stitcher.load_tile(
+                                os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
+                                neighbour_x,
+                                neighbour_y,
+                                neighbour_z)
 
         center_vertices_count = len(center_tile.get_edge_vertices(edge='s'))
         neighbour_vertices_count = len(neighbour_tile.get_edge_vertices(edge='n'))

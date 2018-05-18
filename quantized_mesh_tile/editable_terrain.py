@@ -70,7 +70,8 @@ class EditableTerrainTile(TerrainTile):
     def get_bounding_box(self):
         """
         Returns the bounding box of the tile in WGS84 degree
-        :return: Dictionary of floats for boundingbox of the tile with keys ['west','east','north', 'south']
+        :return: Dictionary of floats for boundingbox of the tile with
+                keys ['west','east','north', 'south']
         """
         return {'west': self._west,
                 'east': self._east,
@@ -143,7 +144,8 @@ class EditableTerrainTile(TerrainTile):
 
     def find_all_triangles_of(self, vertex):
         """
-        Searches for all triangles of the specified vertex index and returns the list of triangles
+        Searches for all triangles of the specified vertex index
+        and returns the list of triangles
         :param vertex: the vertex index
         :return: Array of triangle indices
         """
@@ -178,7 +180,9 @@ class EditableTerrainTile(TerrainTile):
 
     def calculate_weighted_normals_for(self, triangles):
         """
-        Calculates normal vectors for the specified triangles, this normal vectors are not normalized and multiplicated with the area of participating triangle
+        Calculates normal vectors for the specified triangles, this
+        normal vectors are not normalized and multiplicated with the
+        area of participating triangle
         :rtype: Array
         :param triangles:
         :return: Array of not normalized vectors [float,float,float]
@@ -212,7 +216,8 @@ class EditableTerrainTile(TerrainTile):
 
     def save(self):
         """
-        persists the current state of the tile, no matter if changes were made, the old old state will be overwritten
+        persists the current state of the tile, no matter if changes were made,
+        the old old state will be overwritten
         :return: void
         """
         target_dir_path = os.path.dirname(self._file_path)
@@ -226,7 +231,8 @@ class EditableTerrainTile(TerrainTile):
 
     def save_to(self, target_dir_path, gzipped=False):
         """
-        persists the current state of the tile into the specified directory path, if a tile with the same filename
+        persists the current state of the tile into the specified directory path,
+        if a tile with the same filename
         is existing, then the new file will overwrite these
         :param target_dir_path: the path to the directory
         :param gzipped: whether or not the terrain tile should be gzipped
@@ -244,7 +250,8 @@ class EditableTerrainTile(TerrainTile):
 
     def toWKT(self, file_path):
         """
-        for debug use. persists the tile data as wkt data, all vertices and triangles will be create as WGS84 POINT Z and POLYGON Z WKT-Strings
+        for debug use. persists the tile data as wkt data, all vertices and triangles
+        will be create as WGS84 POINT Z and POLYGON Z WKT-Strings
         :param file_path: the file path where the wkt should be written
         :return:void
         """
@@ -272,13 +279,16 @@ class EditableTerrainTile(TerrainTile):
 
                 stream.write("POLYGON Z(( {0}, {1}, {2})), {3}\n".format(v1_str, v2_str, v3_str, i))
 
-    def find_and_split_triangle(self, vertex_prev_index, vertex_next_index, coordinate_vertex_new):
+    def find_and_split_triangle(self, vertex_prev_index, vertex_next_index,
+                                coordinate_vertex_new):
         """
-        Finds and splits the triangle, specified by the vertex_prev_index and vertex_next_index into two new triangles
-        with vertex_insert as new vertex of both triangles
+        Finds and splits the triangle, specified by the vertex_prev_index and
+        vertex_next_index into two new triangles with vertex_insert as new
+        vertex of both triangles
         :param vertex_prev_index:the index of the previous vertex for the new vertex
         :param vertex_next_index:the index of the next vertex for the new vertex
-        :param coordinate_vertex_new: the wgs84 coordinate of the vertex between vertex_prev and vertex_next
+        :param coordinate_vertex_new: the wgs84 coordinate of the vertex between
+                vertex_prev and vertex_next
         :return: the index of the new vertex
         """
 
@@ -328,7 +338,8 @@ class EditableTerrainTile(TerrainTile):
 
     def rebuild_h(self):
         """
-        Requantize the heights and sets min/max heights of this tile, if heights are changed, otherwise nothing will happens
+        Requantize the heights and sets min/max heights of this tile, if heights are
+        changed, otherwise nothing will happens
         """
         if self._changed_heights:
             new_max = max(self._changed_heights)
@@ -351,7 +362,8 @@ class EditableTerrainTile(TerrainTile):
 
     def _rebuild_indices(self):
         """
-        Private method, should only used internally if any edits on self.u, self.v, self.h  are made.
+        Private method, should only used internally if any edits
+        on self.u, self.v, self.h  are made.
         """
         size = len(self.indices)
         new_u = []
@@ -448,7 +460,9 @@ class EditableTerrainTile(TerrainTile):
         :param h: the quantized height value
         :return: the height in ground units (meter)
         """
-        return lerp(self.header['minimumHeight'], self.header['maximumHeight'], old_div(float(h), MAX))
+        return lerp(self.header['minimumHeight'],
+                    self.header['maximumHeight'],
+                    old_div(float(h), MAX))
 
     def _uvh_to_llh(self, index):
         """
