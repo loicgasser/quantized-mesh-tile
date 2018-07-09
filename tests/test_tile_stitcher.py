@@ -90,15 +90,15 @@ class TestTileStitcher(unittest.TestCase):
 
         # assert
         center_tile = tile_stitcher.load_tile(
-                                os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
-                                center_x,
-                                center_y,
-                                center_z)
+            os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
+            center_x,
+            center_y,
+            center_z)
         neighbour_tile = tile_stitcher.load_tile(
-                                os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
-                                neighbour_x,
-                                neighbour_y,
-                                neighbour_z)
+            os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
+            neighbour_x,
+            neighbour_y,
+            neighbour_z)
 
         center_vertices_count = len(center_tile.get_edge_vertices(edge='s'))
         neighbour_vertices_count = len(neighbour_tile.get_edge_vertices(edge='n'))

@@ -274,8 +274,9 @@ class TestTerrainTile(unittest.TestCase):
         # Regular file not gzip compressed
         ter = TerrainTile()
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               'data/%s_%s_%s_light_watermask.terrain' % (z, x, y)), 'rb') as f:
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 'data/%s_%s_%s_light_watermask.terrain' % (z, x, y))
+        with open(file_path, 'rb') as f:
             content = io.BytesIO(f.read())
 
         ter.fromBytesIO(content, hasLighting=True, hasWatermask=True)
