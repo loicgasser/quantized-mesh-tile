@@ -437,6 +437,8 @@ class TileStitcher(object):
     def stitch_together(self):
         edge_connections = self._find_edge_connections()
         self._stitch_edges(edge_connections)
+        for n in self._neighbours.values():
+            print(len(n.vLight))
         self._build_normals(edge_connections)
 
     def save(self):

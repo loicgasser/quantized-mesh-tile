@@ -102,10 +102,10 @@ class TestTopology(unittest.TestCase):
 
         self.assertEqual(topology.minLon, 1.2)
         self.assertEqual(topology.minLat, 1.1)
-        self.assertEqual(topology.minHeight, 1.1)
+        self.assertEqual(topology.minHeight, 1.0)
         self.assertEqual(topology.maxLon, 3.2)
         self.assertEqual(topology.maxLat, 3.1)
-        self.assertEqual(topology.maxHeight, 4.5)
+        self.assertEqual(topology.maxHeight, 5)
 
     def testTopologyTwoVerticesConstructor(self):
         topology = TerrainTopology(geometries=[vertices_1, vertices_2])
@@ -129,10 +129,10 @@ class TestTopology(unittest.TestCase):
 
         self.assertEqual(topology.minLon, 1.2)
         self.assertEqual(topology.minLat, 1.1)
-        self.assertEqual(topology.minHeight, 1.1)
+        self.assertEqual(topology.minHeight, 1.0)
         self.assertEqual(topology.maxLon, 3.2)
         self.assertEqual(topology.maxLat, 3.1)
-        self.assertEqual(topology.maxHeight, 4.5)
+        self.assertEqual(topology.maxHeight, 5)
 
     def testTopologyWithAutocorrect(self):
         topology = TerrainTopology(geometries=[vertices_1, vertices_2],
