@@ -71,7 +71,8 @@ class TestBoundingSphere(unittest.TestCase):
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'data/%s_%s_%s.terrain' % (z, x, y))
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 'data/%s_%s_%s.terrain' % (z, x, y))
         ter.fromFile(file_path)
 
         llh2ecef = lambda x: LLH2ECEF(x[0], x[1], x[2])

@@ -277,7 +277,8 @@ class EditableTerrainTile(TerrainTile):
                 v2_str = "{:.14f} {:.14f} {:.14f}".format(llh2[0], llh2[1], llh2[2])
                 v3_str = "{:.14f} {:.14f} {:.14f}".format(llh3[0], llh3[1], llh3[2])
 
-                stream.write("POLYGON Z(( {0}, {1}, {2})), {3}\n".format(v1_str, v2_str, v3_str, i))
+                stream.write("POLYGON Z(( {0}, {1}, {2})), {3}\n".format(v1_str, v2_str,
+                                                                         v3_str, i))
 
     def find_and_split_triangle(self, vertex_prev_index, vertex_next_index,
                                 coordinate_vertex_new):
@@ -321,7 +322,8 @@ class EditableTerrainTile(TerrainTile):
 
         self.h.append(h)
         self.vLight.append(null_normal)
-        print("Adding new vertex ({0}) [lenght of vLight: {1}]".format(vertex_new_index, len(self.vLight)))
+        print("Adding new vertex ({0}) [lenght of vLight: {1}]".format(vertex_new_index,
+                                                                       len(self.vLight)))
 
         # update triangle with new vertex index
         vertex_offset = old_triangle.index(vertex_next_index)
@@ -458,7 +460,8 @@ class EditableTerrainTile(TerrainTile):
 
     def _dequantize_height(self, h):
         """
-        Private helper method to convert quantized tile (h) values to real world height values
+        Private helper method to convert quantized tile (h) values to real world height
+        values
         :param h: the quantized height value
         :return: the height in ground units (meter)
         """
