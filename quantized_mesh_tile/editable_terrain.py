@@ -266,7 +266,7 @@ class EditableTerrainTile(TerrainTile):
                 stream.write("POINT Z( {0} {1} {2}), {3}\n".format(v[0], v[1], v[2], i))
 
             indices = iter(self.indices)
-            for i in xrange(0, len(self.indices) - 1, 3):
+            for i in range(0, len(self.indices) - 1, 3):
                 vi1 = next(indices)
                 vi2 = next(indices)
                 vi3 = next(indices)
@@ -379,7 +379,7 @@ class EditableTerrainTile(TerrainTile):
         index_map = {}
 
         new_index = 0
-        for i in xrange(0, size):
+        for i in range(0, size):
             old_i = self.indices[i]
 
             if old_i in index_map.keys():
