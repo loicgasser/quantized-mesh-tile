@@ -334,7 +334,7 @@ class EditableTerrainTile(TerrainTile):
 
         triangle_offset = (triangle_index * 3)
         # update old triangle in indices-Array
-        self.indices[triangle_offset + vertex_offset] = vertex_new_index
+        self.indices[int(triangle_offset + vertex_offset)] = vertex_new_index
         # add new triangle to indices-Array
         self.indices.extend(new_triangle)
 
