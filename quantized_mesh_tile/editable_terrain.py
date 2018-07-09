@@ -171,7 +171,7 @@ class EditableTerrainTile(TerrainTile):
         :param index: the index of the triangle
         :return: array of vertex indeces
         """
-        offset = index * 3
+        offset = int(index * 3)
 
         vi1 = self.indices[offset]
         vi2 = self.indices[offset + 1]
