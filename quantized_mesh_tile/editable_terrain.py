@@ -314,8 +314,6 @@ class EditableTerrainTile(TerrainTile):
 
         self.h.append(h)
         self.vLight.append(null_normal)
-        #print("Adding new vertex ({0}) [lenght of vLight: {1}]".format(vertex_new_index,
-        #                                                               len(self.vLight)))
 
         # update triangle with new vertex index
         vertex_offset = old_triangle.index(vertex_next_index)
