@@ -27,6 +27,7 @@ class EditableTerrainTile(TerrainTile):
         self._changed_heights = []
         self._file_path = None
         self._gzipped = False
+        self._triangles = []
 
     def get_edge_vertices(self, edge):
         """
@@ -49,6 +50,39 @@ class EditableTerrainTile(TerrainTile):
             search_array = self.v
         indices = [i for i, x in enumerate(search_array) if x == edge_value]
         return indices
+
+    def get_edge_info(self, vertex_index):
+        """
+        Returns the edge id of the defined vertex_index, if the vertex
+        is part of two edges (corner-vertex), both edge ids are given
+        :param vertex_index: the defined index of this vertex in the indice-list of all
+        vertices
+        :return: Array of edge-ids, Specified by the flags 'w','n','e','s'
+                    for west-, north-, east- and  south-edge
+        """
+        edge_ids = []
+        u = self.u[vertex_index]
+        v = self.v[vertex_index]
+
+        if u == 0:
+            edge_ids.append('w')
+        if u == MAX:
+            edge_ids.append('e')
+
+        if v == 0:
+            edge_ids.append('n')
+        if v == MAX:
+            edge_ids.append('s')
+
+        return edge_ids
+
+    def get_edge_info(self, triangle):
+        v1, v2, v3 = triangle
+        edge_ids = []
+        edge_ids.extend(self.get_edge_info(v1))
+        edge_ids.extend(self.get_edge_info(v2))
+        edge_ids.extend(self.get_edge_info(v3))
+        return edge_ids
 
     def get_edge_coordinates(self, edge):
         # type: (string) -> Array
@@ -131,14 +165,18 @@ class EditableTerrainTile(TerrainTile):
         return self._uvh_to_llh(index)
 
     def find_triangle_of(self, vertex_prev, vertex_next):
-        indices = iter(self.indices)
-        for i in range(0, len(self.indices) - 1, 3):
-            vi1 = next(indices)
-            vi2 = next(indices)
-            vi3 = next(indices)
-            triangle = (vi1, vi2, vi3)
-            if vertex_prev in triangle and vertex_next in triangle:
-                return i / 3
+        """
+        Returns the triangle where both given vertices are member of.
+        :param vertex_prev: index of the first (previous) vertex
+        :param vertex_next: index of the second (next) vertex
+        :return: the index of the queried triangle
+        """
+        triangles_of_prev = self.find_all_triangles_of(vertex_prev)
+        triangles_of_next = self.find_all_triangles_of(vertex_next)
+
+        indices = list(triangles_of_prev & triangles_of_next)
+        if indices:
+            return indices[0]
 
         return None
 
@@ -149,21 +187,7 @@ class EditableTerrainTile(TerrainTile):
         :param vertex: the vertex index
         :return: Array of triangle indices
         """
-        triangles = []
-        for triangle in self._get_triangles():
-            if vertex in triangle:
-                triangles.append(triangle)
-
-        return triangles
-
-    def _get_triangles(self):
-        indices = iter(self.indices)
-        for i in range(0, len(self.indices), 3):
-            vi1 = next(indices)
-            vi2 = next(indices)
-            vi3 = next(indices)
-            triangle = (vi1, vi2, vi3)
-            yield triangle
+        return set([int(i / 3) for i, v in enumerate(self.indices) if v == vertex])
 
     def get_triangle(self, index):
         """
@@ -178,20 +202,21 @@ class EditableTerrainTile(TerrainTile):
         vi3 = self.indices[offset + 2]
         return vi1, vi2, vi3
 
-    def calculate_weighted_normals_for(self, triangles):
+    def calculate_weighted_normals_for(self, triangle_indices):
         """
         Calculates normal vectors for the specified triangles, this
         normal vectors are not normalized and multiplicated with the
-        area of participating triangle
+        area of participating triangle_index
         :rtype: Array
         :param triangles:
         :return: Array of not normalized vectors [float,float,float]
         """
         weighted_normals = []
-        for triangle in triangles:
-            llh0 = self._uvh_to_llh(triangle[0])
-            llh1 = self._uvh_to_llh(triangle[1])
-            llh2 = self._uvh_to_llh(triangle[2])
+        for triangle_index in triangle_indices:
+            i0, i1, i2 = self.get_triangle(triangle_index)
+            llh0 = self._uvh_to_llh(i0)
+            llh1 = self._uvh_to_llh(i1)
+            llh2 = self._uvh_to_llh(i2)
             v0 = LLH2ECEF(llh0[0], llh0[1], llh0[2])
             v1 = LLH2ECEF(llh1[0], llh1[1], llh1[2])
             v2 = LLH2ECEF(llh2[0], llh2[1], llh2[2])
@@ -337,6 +362,7 @@ class EditableTerrainTile(TerrainTile):
         self.indices[int(triangle_offset + vertex_offset)] = vertex_new_index
         # add new triangle to indices-Array
         self.indices.extend(new_triangle)
+        self._triangles = []
 
         return vertex_new_index
 
