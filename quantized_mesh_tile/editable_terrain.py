@@ -51,39 +51,6 @@ class EditableTerrainTile(TerrainTile):
         indices = [i for i, x in enumerate(search_array) if x == edge_value]
         return indices
 
-    def get_edge_info(self, vertex_index):
-        """
-        Returns the edge id of the defined vertex_index, if the vertex
-        is part of two edges (corner-vertex), both edge ids are given
-        :param vertex_index: the defined index of this vertex in the indice-list of all
-        vertices
-        :return: Array of edge-ids, Specified by the flags 'w','n','e','s'
-                    for west-, north-, east- and  south-edge
-        """
-        edge_ids = []
-        u = self.u[vertex_index]
-        v = self.v[vertex_index]
-
-        if u == 0:
-            edge_ids.append('w')
-        if u == MAX:
-            edge_ids.append('e')
-
-        if v == 0:
-            edge_ids.append('n')
-        if v == MAX:
-            edge_ids.append('s')
-
-        return edge_ids
-
-    def get_edge_info(self, triangle):
-        v1, v2, v3 = triangle
-        edge_ids = []
-        edge_ids.extend(self.get_edge_info(v1))
-        edge_ids.extend(self.get_edge_info(v2))
-        edge_ids.extend(self.get_edge_info(v3))
-        return edge_ids
-
     def get_edge_coordinates(self, edge):
         # type: (string) -> Array
         """
@@ -347,8 +314,8 @@ class EditableTerrainTile(TerrainTile):
 
         self.h.append(h)
         self.vLight.append(null_normal)
-        print("Adding new vertex ({0}) [lenght of vLight: {1}]".format(vertex_new_index,
-                                                                       len(self.vLight)))
+        #print("Adding new vertex ({0}) [lenght of vLight: {1}]".format(vertex_new_index,
+        #                                                               len(self.vLight)))
 
         # update triangle with new vertex index
         vertex_offset = old_triangle.index(vertex_next_index)
