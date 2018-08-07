@@ -151,6 +151,7 @@ class TestTileStitcher(unittest.TestCase):
         stitcher.add_neighbour(east_tile)
         stitcher.add_neighbour(south_tile)
         stitcher.stitch_together()
+        stitcher.save_to(get_tmp_path())
 
         # assert
         center_to_east_vertices_count = len(center_tile.get_edge_vertices(edge='e'))

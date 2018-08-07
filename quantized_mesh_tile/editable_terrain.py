@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from datetime import datetime
 
 import numpy as np
 from future.utils import old_div
@@ -196,7 +197,9 @@ class EditableTerrainTile(TerrainTile):
 
     def toFile(self, file_path, gzipped=False):
         if self.is_index_dirty:
+            # start = datetime.now()
             self._rebuild_indices()
+            # print("rebuilding indices in {} seconds".format((datetime.now()-start).total_seconds()))
 
         super(EditableTerrainTile, self).toFile(file_path, gzipped)
 
@@ -360,52 +363,38 @@ class EditableTerrainTile(TerrainTile):
         Private method, should only used internally if any edits
         on self.u, self.v, self.h  are made.
         """
-        size = len(self.indices)
-        new_u = []
-        new_v = []
-        new_h = []
-
-        new_indices = []
-        new_v_light = []
+        size_indices = len(self.indices)
+        size_uvh = len(self.u)
+        new_u = [None]*size_uvh
+        new_v = [None]*size_uvh
+        new_h = [None]*size_uvh
+        new_v_light = [None]*size_uvh
+        new_indices = [None] * size_indices
         index_map = {}
 
         new_index = 0
-        for i in range(0, size):
-            old_i = self.indices[i]
-
-            if old_i in index_map.keys():
-                new_i = index_map[old_i]
+        for position, old_i in enumerate(self.indices):
+            if index_map.has_key(old_i):
+                (new_i, positions) = index_map[old_i]
+                positions.append(position)
             else:
-                index_map[old_i] = new_index
-                new_i = new_index
+                index_map[old_i] = (new_index, [position])
                 new_index += 1
 
-                new_u.append(self.u[old_i])
-                new_v.append(self.v[old_i])
-                new_h.append(self.h[old_i])
+        for old_i, data in index_map.items():
+            (new_i, positions) = data
+            new_u[new_i] = (self.u[old_i])
+            new_v[new_i] = (self.v[old_i])
+            new_h[new_i] = (self.h[old_i])
+            new_v_light[new_i] = (self.vLight[old_i])
 
-                new_v_light.append(self.vLight[old_i])
-            new_indices.append(new_i)
+            for position in positions:
+                new_indices[position] = new_i
 
         if len(self.indices) == len(new_indices):
             self.indices = new_indices
         else:
             raise Exception("Array-Size of Indices not equal")
-
-        if len(self.u) == len(new_u):
-            self.u = new_u
-        else:
-            raise Exception("Array-Size of u-Values not equal")
-
-        if len(self.v) == len(new_v):
-            self.v = new_v
-        else:
-            raise Exception("Array-Size of v-Values not equal")
-
-        if len(self.h) == len(new_h):
-            self.h = new_h
-        else:
-            raise Exception("Array-Size of h-Values not equal")
 
         self.westI = self.get_edge_vertices('w')
         self.southI = self.get_edge_vertices('s')
