@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-from datetime import datetime
 
 import numpy as np
 from future.utils import old_div
@@ -197,9 +196,7 @@ class EditableTerrainTile(TerrainTile):
 
     def toFile(self, file_path, gzipped=False):
         if self.is_index_dirty:
-            # start = datetime.now()
             self._rebuild_indices()
-            # print("rebuilding indices in {} seconds".format((datetime.now()-start).total_seconds()))
 
         super(EditableTerrainTile, self).toFile(file_path, gzipped)
 
@@ -365,16 +362,16 @@ class EditableTerrainTile(TerrainTile):
         """
         size_indices = len(self.indices)
         size_uvh = len(self.u)
-        new_u = [None]*size_uvh
-        new_v = [None]*size_uvh
-        new_h = [None]*size_uvh
-        new_v_light = [None]*size_uvh
+        new_u = [None] * size_uvh
+        new_v = [None] * size_uvh
+        new_h = [None] * size_uvh
+        new_v_light = [None] * size_uvh
         new_indices = [None] * size_indices
         index_map = {}
 
         new_index = 0
         for position, old_i in enumerate(self.indices):
-            if index_map.has_key(old_i):
+            if old_i in index_map.keys():
                 (new_i, positions) = index_map[old_i]
                 positions.append(position)
             else:
