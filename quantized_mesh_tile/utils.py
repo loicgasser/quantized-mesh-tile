@@ -179,6 +179,32 @@ def computeNormals(vertices, faces):
     return normalsPerVertex
 
 
+def calc_angles(face):
+    import numpy as np
+
+    a = np.array(face[0])
+    b = np.array(face[1])
+    c = np.array(face[2])
+
+    ab = b - a
+    ac = c - a
+    ba = a - b
+    bc = c - b
+    ca = a - c
+    cb = b - c
+
+    cosine_angle_a = np.dot(ab, ac) / (np.linalg.norm(ab) * np.linalg.norm(ac))
+    angle_a = np.arccos(cosine_angle_a)
+
+    cosine_angle_b = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle_b = np.arccos(cosine_angle_b)
+
+    cosine_angle_c = np.dot(ca, cb) / (np.linalg.norm(ca) * np.linalg.norm(cb))
+    angle_c = np.arccos(cosine_angle_c)
+
+    return angle_a, angle_b, angle_c
+
+
 def gzipFileObject(data):
     compressed = io.BytesIO()
     gz = gzip.GzipFile(fileobj=compressed, mode='wb', compresslevel=5)

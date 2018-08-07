@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os
 from builtins import map
 import unittest
 import quantized_mesh_tile.cartesian3d as c3d
@@ -71,7 +71,9 @@ class TestBoundingSphere(unittest.TestCase):
         geodetic = GlobalGeodetic(True)
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y))
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 'data/%s_%s_%s.terrain' % (z, x, y))
+        ter.fromFile(file_path)
 
         llh2ecef = lambda x: LLH2ECEF(x[0], x[1], x[2])
         coords = ter.getVerticesCoordinates()

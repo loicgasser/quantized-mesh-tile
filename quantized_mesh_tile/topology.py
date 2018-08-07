@@ -299,7 +299,7 @@ class TerrainTopology(object):
         Normally never used directly.
         """
         if isinstance(self.vertices, np.ndarray):
-            return np.min(self.vertices[:, 2])
+            return math.floor(np.min(self.vertices[:, 2]))
 
     @property
     def maxLon(self):
@@ -326,7 +326,7 @@ class TerrainTopology(object):
         Normally never used directly.
         """
         if isinstance(self.vertices, np.ndarray):
-            return np.max(self.vertices[:, 2])
+            return math.ceil(np.max(self.vertices[:, 2]))
 
     @property
     def ecefMinX(self):

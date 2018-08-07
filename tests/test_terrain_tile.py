@@ -14,7 +14,8 @@ from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
 class TestTerrainTile(unittest.TestCase):
     def setUp(self):
-        self.tmpfile = 'tests/data/temp.terrain'
+        self.tmpfile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'data/temp.terrain')
 
     def tearDown(self):
         if os.path.exists(self.tmpfile):
@@ -35,7 +36,8 @@ class TestTerrainTile(unittest.TestCase):
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y))
+        ter.fromFile(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  'data/%s_%s_%s.terrain' % (z, x, y)))
         ter.toFile(self.tmpfile)
         self.assertIsInstance(ter.__repr__(), str)
 
@@ -106,7 +108,8 @@ class TestTerrainTile(unittest.TestCase):
         [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        ter.fromFile('tests/data/%s_%s_%s_watermask.terrain' % (z, x, y),
+        ter.fromFile(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  'data/%s_%s_%s_watermask.terrain' % (z, x, y)),
                      hasWatermask=True)
 
         self.assertEqual(len(ter.watermask), 256)
@@ -140,7 +143,8 @@ class TestTerrainTile(unittest.TestCase):
         ter = TerrainTile()
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile(
-            'tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'data/%s_%s_%s_light_watermask.terrain' % (z, x, y)),
             hasLighting=True, hasWatermask=True
         )
 
@@ -190,7 +194,8 @@ class TestTerrainTile(unittest.TestCase):
         ter = TerrainTile()
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile(
-            'tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'data/%s_%s_%s_light_watermask.terrain' % (z, x, y)),
             hasLighting=True, hasWatermask=True
         )
 
@@ -198,7 +203,8 @@ class TestTerrainTile(unittest.TestCase):
         terG = TerrainTile()
         terG = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         terG.fromFile(
-            'tests/data/%s_%s_%s_light_watermask.terrain.gz' % (z, x, y),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'data/%s_%s_%s_light_watermask.terrain.gz' % (z, x, y)),
             hasLighting=True, hasWatermask=True, gzipped=True
         )
 
@@ -268,7 +274,9 @@ class TestTerrainTile(unittest.TestCase):
         # Regular file not gzip compressed
         ter = TerrainTile()
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
-        with open('tests/data/%s_%s_%s_light_watermask.terrain' % (z, x, y), 'rb') as f:
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 'data/%s_%s_%s_light_watermask.terrain' % (z, x, y))
+        with open(file_path, 'rb') as f:
             content = io.BytesIO(f.read())
 
         ter.fromBytesIO(content, hasLighting=True, hasWatermask=True)
