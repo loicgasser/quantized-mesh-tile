@@ -372,7 +372,7 @@ class EditableTerrainTile(TerrainTile):
 
         new_index = 0
         for position, old_i in enumerate(self.indices):
-            if index_map.has_key(old_i):
+            if old_i in index_map.keys:
                 (new_i, positions) = index_map[old_i]
                 positions.append(position)
             else:

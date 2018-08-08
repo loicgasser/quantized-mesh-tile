@@ -27,11 +27,11 @@ def get_tile(z, x, y):
                                 'data/%s_%s_%s.terrain' % (z, x, y))
     return tile_stitcher.load_tile(terrain_path, x, y, z)
 
-def get_saved_tile(path,z, x, y):
+
+def get_saved_tile(path, z, x, y):
     terrain_path = os.path.join(path,
                                 '%s_%s_%s.terrain' % (z, x, y))
     return tile_stitcher.load_tile(terrain_path, x, y, z)
-
 
 
 class TestTileStitcher(unittest.TestCase):
@@ -200,4 +200,3 @@ class TestTileStitcher(unittest.TestCase):
 
         self.assertTrue(center_to_east_vertices_count == east_vertices_count)
         self.assertTrue(center_to_south_vertices_count == south_vertices_count)
-
