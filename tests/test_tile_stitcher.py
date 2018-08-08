@@ -278,7 +278,7 @@ class TestTileStitcher(unittest.TestCase):
 
     def test_EdgeConnection_repr(self):
         # arrange
-        expected_repr = 'E:w [1] -> ({\'c\': 3, \'w\': 2})'
+        expected_repr_start = 'E:w [1] -> ({'
 
         # act
         ec = EdgeConnection('w', 1)
@@ -287,4 +287,4 @@ class TestTileStitcher(unittest.TestCase):
         actual_repr = ec.__repr__()
 
         # assert
-        self.assertEquals(actual_repr, expected_repr)
+        self.assertTrue(actual_repr.startswith(expected_repr_start))
