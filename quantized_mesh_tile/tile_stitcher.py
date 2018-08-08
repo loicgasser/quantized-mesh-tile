@@ -227,49 +227,6 @@ class TileStitcher(object):
 
         return center_vertices, neighbour_vertices
 
-    def _calc_wheighted_normals(self, edge_connections):
-        normals = {}
-        for edge in edge_connections:
-            for index in range(len(edge)):
-                edge_connection = edge[index]
-                center_vertex = edge_connection.get_side_vertex('c')
-
-                if edge_connection.is_complete:
-                    weighted_normals = []
-                    vertex_indices = edge_connection.get_side_vertices
-                    for edge_info, vertex_index in vertex_indices.items():
-                        side_vertex = edge_connection.get_side_vertex(edge_info)
-                        neighbour = self._neighbours[side_vertex]
-                        if edge_info is not 'c':
-                            triangles = neighbour.find_all_triangles_of(vertex_index)
-                            weighted_normals.extend(
-                                neighbour.calculate_weighted_normals_for(triangles))
-
-                    normals[center_vertex] = weighted_normals
-
-                elif edge_connection.is_broken_on_neighbour:
-                    # wenn vertex nur in c,
-                    # dann triangle in n von vertex-1 und vertex+1 finden
-                    # und die gewichtete Normale berechnen
-                    info = edge_connection.edge_info
-                    vertex_prev = self._get_prev_vertex(index, edge, info)
-                    vertex_next = self._get_next_vertex(index, edge, info)
-                    side_vertex = edge_connection.get_side_vertex(info)
-                    neighbour = self._neighbours[side_vertex]
-                    triangle_index = neighbour.find_triangle_of(vertex_prev, vertex_next)
-                    if not triangle_index:
-                        print(" No Triangle found for {0}|{1} in {2} !".format(
-                            vertex_prev,
-                            vertex_next,
-                            info))
-                        continue
-
-                    triangles = [neighbour.get_triangle(triangle_index)]
-                    weighted_normals = neighbour.calculate_weighted_normals_for(triangles)
-                    normals[side_vertex] = weighted_normals
-
-        return normals
-
     def _find_edge_connections(self):
 
         edge_connections = []
@@ -340,20 +297,33 @@ class TileStitcher(object):
 
                     edge_connection.add_side('c', vertex_new)
 
-    def _harmonize_normals(self, neighbour_weighted_normals):
-        for center_vertex_index, n_weighted_normals in neighbour_weighted_normals.items():
+    def _harmonize_normals(self, edge_connections):
+        center = self._center
+        for edge in edge_connections:
+            for edge_connection in edge:
+                center_vertex_index = edge_connection.get_side_vertex('c')
 
-            center = self._center
-            center_triangles = center.find_all_triangles_of(center_vertex_index)
-            weighted_normals = center.calculate_weighted_normals_for(center_triangles)
-            weighted_normals.extend(n_weighted_normals)
+                side_vertex = edge_connection.get_side_vertex(edge_connection.edge_info)
+                neighbour_vertex_indices = {edge_connection.edge_info: side_vertex}
 
-            normal_vertex = [0, 0, 0]
-            for w_n in weighted_normals:
-                normal_vertex = c3d.add(normal_vertex, w_n)
+                center_triangles = center.find_all_triangles_of(center_vertex_index)
+                normals = center.calculate_weighted_normals_for(center_triangles)
 
-            normal_vertex = c3d.normalize(normal_vertex)
-            center.set_normal(center_vertex_index, normal_vertex)
+                for neighbour_info, vertex_index in neighbour_vertex_indices.items():
+                    neighbour_tile = self._neighbours[neighbour_info]
+                    triangles = neighbour_tile.find_all_triangles_of(vertex_index)
+                    normals.extend(neighbour_tile.calculate_weighted_normals_for(
+                        triangles))
+
+                normal_vertex = [0, 0, 0]
+                for w_n in normals:
+                    normal_vertex = c3d.add(normal_vertex, w_n)
+
+                normal_vertex = c3d.normalize(normal_vertex)
+                center.set_normal(center_vertex_index, normal_vertex)
+                for neighbour_info, vertex_index in neighbour_vertex_indices.items():
+                    neighbour_tile = self._neighbours[neighbour_info]
+                    neighbour_tile.set_normal(vertex_index, normal_vertex)
 
     def _build_normals(self, edge_connections):
         center = self._center
@@ -430,9 +400,7 @@ class TileStitcher(object):
 
     def harmonize_normals(self):
         edge_connections = self._find_edge_connections()
-
-        weighted_normals = self._calc_wheighted_normals(edge_connections)
-        self._harmonize_normals(weighted_normals)
+        self._harmonize_normals(edge_connections)
 
     def stitch_together(self):
         edge_connections = self._find_edge_connections()

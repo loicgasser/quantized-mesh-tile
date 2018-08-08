@@ -201,6 +201,33 @@ class TestTileStitcher(unittest.TestCase):
         self.assertTrue(center_to_east_vertices_count == east_vertices_count)
         self.assertTrue(center_to_south_vertices_count == south_vertices_count)
 
+    def test_harmonize_with_east_and_south(self):
+        # arrange
+        center_x = 67
+        center_y = 49
+        center_z = 6
+
+        east_x = 68
+        east_y = 49
+        east_z = 6
+
+        south_x = 67
+        south_y = 48
+        south_z = 6
+
+        center_tile = get_tile(center_z, center_x, center_y)
+        east_tile = get_tile(east_z, east_x, east_y)
+        south_tile = get_tile(south_z, south_x, south_y)
+
+        # act
+        stitcher = TileStitcher(center_tile)
+        stitcher.add_neighbour(east_tile)
+        stitcher.add_neighbour(south_tile)
+        stitcher.harmonize_normals()
+
+        # assert
+        self.assertTrue(True)
+
     def test_get_neighbours(self):
         # arrange
         center_x = 17380
