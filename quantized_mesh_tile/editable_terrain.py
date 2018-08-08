@@ -11,6 +11,7 @@ from quantized_mesh_tile.utils import triangleArea
 from . import cartesian3d as c3d
 
 null_normal = [0, 0, 0]
+MIN = 0
 
 
 class EditableTerrainTile(TerrainTile):
@@ -37,7 +38,7 @@ class EditableTerrainTile(TerrainTile):
         :return: Array of integers
         """
         if 'w' == edge:
-            edge_value = 0
+            edge_value = MIN
             search_array = self.u
         elif 'e' == edge:
             edge_value = MAX
@@ -46,7 +47,7 @@ class EditableTerrainTile(TerrainTile):
             edge_value = MAX
             search_array = self.v
         elif 's' == edge:
-            edge_value = 0
+            edge_value = MIN
             search_array = self.v
         indices = [i for i, x in enumerate(search_array) if x == edge_value]
         return indices
@@ -255,7 +256,7 @@ class EditableTerrainTile(TerrainTile):
             vertices = self.getVerticesCoordinates()
             for i in range(len(vertices)):
                 v = vertices[i]
-                stream.write("POINT Z( {0} {1} {2}), {3}\n".format(v[0], v[1], v[2], i))
+                stream.write("POINT Z( {0} {1} {2}); {3}\n".format(v[0], v[1], v[2], i))
 
             indices = iter(self.indices)
             for i in range(0, len(self.indices) - 1, 3):
@@ -269,7 +270,7 @@ class EditableTerrainTile(TerrainTile):
                 v2_str = "{:.14f} {:.14f} {:.14f}".format(llh2[0], llh2[1], llh2[2])
                 v3_str = "{:.14f} {:.14f} {:.14f}".format(llh3[0], llh3[1], llh3[2])
 
-                stream.write("POLYGON Z(( {0}, {1}, {2})), {3}\n".format(v1_str, v2_str,
+                stream.write("POLYGON Z(( {0}, {1}, {2})); {3}\n".format(v1_str, v2_str,
                                                                          v3_str, i))
 
     def find_and_split_triangle(self, vertex_prev_index, vertex_next_index,
@@ -371,7 +372,7 @@ class EditableTerrainTile(TerrainTile):
 
         new_index = 0
         for position, old_i in enumerate(self.indices):
-            if old_i in index_map.keys():
+            if index_map.has_key(old_i):
                 (new_i, positions) = index_map[old_i]
                 positions.append(position)
             else:
@@ -393,12 +394,15 @@ class EditableTerrainTile(TerrainTile):
         else:
             raise Exception("Array-Size of Indices not equal")
 
+        self.u = new_u
+        self.v = new_v
+        self.h = new_h
+        self.vLight = new_v_light
+
         self.westI = self.get_edge_vertices('w')
         self.southI = self.get_edge_vertices('s')
         self.eastI = self.get_edge_vertices('e')
         self.northI = self.get_edge_vertices('n')
-
-        self.vLight = new_v_light
 
     def _quantize_latitude(self, latitude):
         """
