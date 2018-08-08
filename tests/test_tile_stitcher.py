@@ -200,3 +200,39 @@ class TestTileStitcher(unittest.TestCase):
 
         self.assertTrue(center_to_east_vertices_count == east_vertices_count)
         self.assertTrue(center_to_south_vertices_count == south_vertices_count)
+
+    def test_get_neighbours(self):
+        # arrange
+        center_x = 17380
+        center_y = 12516
+        center_z = 14
+
+        expected_west = [14, 17379, 12516]
+        expected_north = [14, 17380, 12517]
+        expected_east = [14, 17381, 12516]
+        expected_south = [14, 17380, 12515]
+
+        # act
+        neighbours = tile_stitcher.get_neighbours(center_z, center_x, center_y)
+
+        # assert
+        self.assertSequenceEqual(neighbours['west'], expected_west)
+        self.assertSequenceEqual(neighbours['north'], expected_north)
+        self.assertSequenceEqual(neighbours['east'], expected_east)
+        self.assertSequenceEqual(neighbours['south'], expected_south)
+
+    def test_get_neighbours_south_east(self):
+        # arrange
+        center_x = 17380
+        center_y = 12516
+        center_z = 14
+
+        expected_east = [14, 17381, 12516]
+        expected_south = [14, 17380, 12515]
+
+        # act
+        neighbours = tile_stitcher.get_neighbours_south_east(center_z, center_x, center_y)
+
+        # assert
+        self.assertSequenceEqual(neighbours['east'], expected_east)
+        self.assertSequenceEqual(neighbours['south'], expected_south)
