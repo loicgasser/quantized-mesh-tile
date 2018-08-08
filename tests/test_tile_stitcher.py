@@ -4,7 +4,7 @@ import platform
 import unittest
 
 from quantized_mesh_tile import TerrainTile, tile_stitcher
-from quantized_mesh_tile.tile_stitcher import TileStitcher
+from quantized_mesh_tile.tile_stitcher import TileStitcher, EdgeConnection
 
 
 def get_neighbours(z, x, y):
@@ -203,6 +203,7 @@ class TestTileStitcher(unittest.TestCase):
 
     def test_harmonize_with_east_and_south(self):
         # arrange
+        expected_changes = 71
         center_x = 67
         center_y = 49
         center_z = 6
@@ -218,15 +219,26 @@ class TestTileStitcher(unittest.TestCase):
         center_tile = get_tile(center_z, center_x, center_y)
         east_tile = get_tile(east_z, east_x, east_y)
         south_tile = get_tile(south_z, south_x, south_y)
+        normal_vectors_before = list(center_tile.vLight)
 
         # act
         stitcher = TileStitcher(center_tile)
         stitcher.add_neighbour(east_tile)
         stitcher.add_neighbour(south_tile)
         stitcher.harmonize_normals()
+        normal_vectors_after = list(center_tile.vLight)
 
         # assert
-        self.assertTrue(True)
+        changes = []
+        for i, normal in enumerate(normal_vectors_before):
+            normal_before = set(normal)
+            normal_after = set(normal_vectors_after[i])
+            changed = normal_before.difference(normal_after)
+            if changed:
+                changes.append(i)
+
+        actual_changes = len(changes)
+        self.assertTrue(actual_changes == expected_changes)
 
     def test_get_neighbours(self):
         # arrange
@@ -263,3 +275,16 @@ class TestTileStitcher(unittest.TestCase):
         # assert
         self.assertSequenceEqual(neighbours['east'], expected_east)
         self.assertSequenceEqual(neighbours['south'], expected_south)
+
+    def test_EdgeConnection_repr(self):
+        # arrange
+        expected_repr = 'E:w [1] -> ({\'c\': 3, \'w\': 2})'
+
+        # act
+        ec = EdgeConnection('w', 1)
+        ec.add_side('w', 2)
+        ec.add_side('c', 3)
+        actual_repr = ec.__repr__()
+
+        # assert
+        self.assertEquals(actual_repr, expected_repr)

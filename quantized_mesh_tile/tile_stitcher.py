@@ -84,7 +84,8 @@ class EdgeConnection(object):
         self._side_vertices = {}
 
     def __repr__(self):
-        msg = '[{0}] -> ({1})'.format(self.edge_index, self._side_vertices)
+        msg = 'E:{0} [{1}] -> ({2})'.format(self.edge_info, self.edge_index,
+                                            self._side_vertices)
         return msg
 
     def add_side(self, edge_side, side_vertex):
