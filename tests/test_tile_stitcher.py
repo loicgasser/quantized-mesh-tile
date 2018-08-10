@@ -1,40 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
-import platform
 import unittest
 
 from quantized_mesh_tile import TerrainTile, tile_stitcher
 from quantized_mesh_tile.tile_stitcher import TileStitcher, EdgeConnection
-
-
-def get_neighbours(z, x, y):
-    return {'west': (z, x - 1, y),
-            'north': (z, x, y + 1),
-            'south': (z, x, y - 1),
-            'east': (z, x + 1, y)}
-
-
-def get_tmp_path():
-    current_system = platform.system()
-    if 'Windows' is current_system:
-        return 'c:/Temp/'
-    else:
-        return '/tmp/'
-
-
-def get_tile(z, x, y):
-    terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'data/%s_%s_%s.terrain' % (z, x, y))
-    return tile_stitcher.load_tile(terrain_path, x, y, z)
-
-
-def get_saved_tile(path, z, x, y):
-    terrain_path = os.path.join(path,
-                                '%s_%s_%s.terrain' % (z, x, y))
-    return tile_stitcher.load_tile(terrain_path, x, y, z)
+from tests import data_utils
 
 
 class TestTileStitcher(unittest.TestCase):
+
+    def setUp(self):
+        self.quantized_triangles = data_utils.read_quantized_triangles()
 
     def test_constructor(self):
         # arrange
@@ -47,8 +23,8 @@ class TestTileStitcher(unittest.TestCase):
         neighbour_z = 14
 
         # act
-        center_tile = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        center_tile = data_utils.build_terrain_tile(self.quantized_triangles, center_x, center_y, center_z)
+        neighbour_tile = data_utils.build_terrain_tile(self.quantized_triangles, neighbour_x, neighbour_y, neighbour_z)
         TileStitcher(center_tile)
 
         # assert
@@ -66,8 +42,8 @@ class TestTileStitcher(unittest.TestCase):
         neighbour_z = 14
 
         # act
-        center_tile = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        center_tile = data_utils.build_terrain_tile(self.quantized_triangles, center_x, center_y, center_z)
+        neighbour_tile = data_utils.build_terrain_tile(self.quantized_triangles, neighbour_x, neighbour_y, neighbour_z)
         stitcher = TileStitcher(center_tile)
         edge_connection = stitcher._get_edge_connection(neighbour_tile)
 
@@ -85,23 +61,23 @@ class TestTileStitcher(unittest.TestCase):
         neighbour_y = 3127
         neighbour_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        center_tile = data_utils.build_terrain_tile(self.quantized_triangles, center_x, center_y, center_z)
+        neighbour_tile = data_utils.build_terrain_tile(self.quantized_triangles, neighbour_x, neighbour_y, neighbour_z)
 
         # act
         stitcher = TileStitcher(center_tile)
         stitcher.add_neighbour(neighbour_tile)
         stitcher.stitch_together()
-        stitcher.save_to(get_tmp_path())
+        stitcher.save_to(data_utils.get_tmp_path())
 
         # assert
         center_tile = tile_stitcher.load_tile(
-            os.path.join(get_tmp_path(), '12_4347_3128.terrain'),
+            os.path.join(data_utils.get_tmp_path(), '12_4347_3128.terrain'),
             center_x,
             center_y,
             center_z)
         neighbour_tile = tile_stitcher.load_tile(
-            os.path.join(get_tmp_path(), '12_4347_3127.terrain'),
+            os.path.join(data_utils.get_tmp_path(), '12_4347_3127.terrain'),
             neighbour_x,
             neighbour_y,
             neighbour_z)
@@ -121,8 +97,8 @@ class TestTileStitcher(unittest.TestCase):
         neighbour_y = 3128
         neighbour_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
-        neighbour_tile = get_tile(neighbour_z, neighbour_x, neighbour_y)
+        center_tile = data_utils.build_terrain_tile(self.quantized_triangles, center_x, center_y, center_z)
+        neighbour_tile = data_utils.build_terrain_tile(self.quantized_triangles, neighbour_x, neighbour_y, neighbour_z)
 
         # act
         stitcher = TileStitcher(center_tile)
@@ -148,16 +124,16 @@ class TestTileStitcher(unittest.TestCase):
         south_y = 3126
         south_z = 12
 
-        center_tile = get_tile(center_z, center_x, center_y)
-        east_tile = get_tile(east_z, east_x, east_y)
-        south_tile = get_tile(south_z, south_x, south_y)
+        center_tile = data_utils.build_terrain_tile(self.quantized_triangles, center_x, center_y, center_z)
+        east_tile = data_utils.build_terrain_tile(self.quantized_triangles, east_x, east_y, east_z)
+        south_tile = data_utils.build_terrain_tile(self.quantized_triangles, south_x, south_y, south_z)
 
         # act
         stitcher = TileStitcher(center_tile)
         stitcher.add_neighbour(east_tile)
         stitcher.add_neighbour(south_tile)
         stitcher.stitch_together()
-        stitcher.save_to(get_tmp_path())
+        stitcher.save_to(data_utils.get_tmp_path())
 
         # assert
         center_to_east_vertices_count = len(center_tile.get_edge_vertices(edge='e'))
@@ -182,9 +158,9 @@ class TestTileStitcher(unittest.TestCase):
         south_y = 12515
         south_z = 14
 
-        center_tile = get_tile(center_z, center_x, center_y)
-        east_tile = get_tile(east_z, east_x, east_y)
-        south_tile = get_tile(south_z, south_x, south_y)
+        center_tile = data_utils.build_terrain_tile(self.quantized_triangles, center_x, center_y, center_z)
+        east_tile = data_utils.build_terrain_tile(self.quantized_triangles, east_x, east_y, east_z)
+        south_tile = data_utils.build_terrain_tile(self.quantized_triangles, south_x, south_y, south_z)
 
         # act
         stitcher = TileStitcher(center_tile)
@@ -216,9 +192,9 @@ class TestTileStitcher(unittest.TestCase):
         south_y = 48
         south_z = 6
 
-        center_tile = get_tile(center_z, center_x, center_y)
-        east_tile = get_tile(east_z, east_x, east_y)
-        south_tile = get_tile(south_z, south_x, south_y)
+        center_tile = data_utils.get_tile(center_z, center_x, center_y)
+        east_tile = data_utils.get_tile(east_z, east_x, east_y)
+        south_tile = data_utils.get_tile(south_z, south_x, south_y)
         normal_vectors_before = list(center_tile.vLight)
 
         # act

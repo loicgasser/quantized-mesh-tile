@@ -1,26 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
-import platform
 import unittest
-
-from quantized_mesh_tile import tile_stitcher
-
-
-def get_tmp_path():
-    current_system = platform.system()
-    if 'Windows' is current_system:
-        return 'c:/Temp/'
-    else:
-        return '/tmp/'
-
-
-def get_tile(z, x, y):
-    terrain_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'data/%s_%s_%s.terrain' % (z, x, y))
-    return tile_stitcher.load_tile(terrain_path, x, y, z)
+from tests import data_utils
 
 
 class TestEditableTerrainTile(unittest.TestCase):
+    def setUp(self):
+        self.quantized_triangles = data_utils.read_quantized_triangles()
 
     def test_get_edge_coordinates(self):
         # arrange
@@ -30,11 +16,11 @@ class TestEditableTerrainTile(unittest.TestCase):
         edge = 'w'
 
         # act
-        tile = get_tile(z, x, y)
+        tile = data_utils.build_terrain_tile(self.quantized_triangles, x, y, z)
         coordinates = tile.get_edge_coordinates(edge)
 
         # assert
-        self.assertTrue(len(coordinates) == 25)
+        self.assertTrue(len(coordinates) == 2)
         self.assertTrue(len(coordinates[0]) == 3)
 
     def test_toWKT(self):
@@ -42,11 +28,11 @@ class TestEditableTerrainTile(unittest.TestCase):
         x = 17388
         y = 12517
         z = 14
-        wkt_path = os.path.join(get_tmp_path(), 'test.wkt')
+        wkt_path = os.path.join(data_utils.get_tmp_path(), 'test.wkt')
 
         try:
             # act
-            tile = get_tile(z, x, y)
+            tile = data_utils.build_terrain_tile(self.quantized_triangles, x, y, z)
             tile.toWKT(wkt_path)
             # assert
             with open(wkt_path, mode='r') as wkt_file:

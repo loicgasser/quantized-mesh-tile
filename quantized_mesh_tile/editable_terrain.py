@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import numpy
 import os
 
 import numpy as np
@@ -11,6 +12,7 @@ from quantized_mesh_tile.utils import triangleArea
 from . import cartesian3d as c3d
 
 null_normal = [0, 0, 0]
+np_null_normal = np.array([0, 0, 0])
 MIN = 0
 
 
@@ -29,6 +31,10 @@ class EditableTerrainTile(TerrainTile):
         self._file_path = None
         self._gzipped = False
         self._triangles = []
+        self.name = None
+
+    def set_name(self, name):
+        self.name = name
 
     def get_edge_vertices(self, edge):
         """
@@ -50,6 +56,9 @@ class EditableTerrainTile(TerrainTile):
             edge_value = MIN
             search_array = self.v
         indices = [i for i, x in enumerate(search_array) if x == edge_value]
+
+        if len(indices) == 0:
+            raise Exception("No edge vertices found for edge: {}".format(edge))
         return indices
 
     def get_edge_coordinates(self, edge):
@@ -231,7 +240,12 @@ class EditableTerrainTile(TerrainTile):
         :param gzipped: whether or not the terrain tile should be gzipped
         :return: void
         """
-        tile_file_name = os.path.basename(self._file_path)
+        if self._file_path:
+            tile_file_name = os.path.basename(self._file_path)
+        elif self.name:
+            tile_file_name = "{}.terrain".format(self.name)
+        else:
+            tile_file_name = 'editable_terrain.terrain'
         if not os.path.exists(target_dir_path):
             os.makedirs(target_dir_path)
 
@@ -270,8 +284,8 @@ class EditableTerrainTile(TerrainTile):
                 v2_str = "{:.14f} {:.14f} {:.14f}".format(llh2[0], llh2[1], llh2[2])
                 v3_str = "{:.14f} {:.14f} {:.14f}".format(llh3[0], llh3[1], llh3[2])
 
-                stream.write("POLYGON Z(( {0}, {1}, {2})); {3}\n".format(v1_str, v2_str,
-                                                                         v3_str, i))
+                stream.write("POLYGON Z(({0},{1},{2},{0})); {3}\n".format(v1_str, v2_str,
+                                                                          v3_str, i))
 
     def find_and_split_triangle(self, vertex_prev_index, vertex_next_index,
                                 coordinate_vertex_new):
@@ -314,6 +328,10 @@ class EditableTerrainTile(TerrainTile):
             h = 0
 
         self.h.append(h)
+
+        if type(self.vLight) == numpy.ndarray:
+            self.vLight = self.vLight.tolist()
+
         self.vLight.append(null_normal)
 
         # update triangle with new vertex index
@@ -327,6 +345,8 @@ class EditableTerrainTile(TerrainTile):
         # update old triangle in indices-Array
         self.indices[int(triangle_offset + vertex_offset)] = vertex_new_index
         # add new triangle to indices-Array
+        if type(self.indices) == numpy.ndarray:
+            self.indices = list(self.indices)
         self.indices.extend(new_triangle)
         self._triangles = []
 
