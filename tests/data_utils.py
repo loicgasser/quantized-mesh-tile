@@ -42,7 +42,8 @@ def load_tile(terrain_path, x, y, z):
     return tile
 
 
-def build_terrain_tile(quantized_triangles, x, y, z, min_h=0, max_h=500, has_lightning=True):
+def build_terrain_tile(quantized_triangles, x, y, z, min_h=0, max_h=500,
+                       has_lightning=True):
     geodetic = GlobalGeodetic(True)
     [minx, miny, maxx, maxy] = geodetic.TileBounds(x, y, z)
 
@@ -56,7 +57,8 @@ def build_terrain_tile(quantized_triangles, x, y, z, min_h=0, max_h=500, has_lig
             triangle.append([longitude, latitude, height])
         triangles.append(triangle)
 
-    topology = TerrainTopology(geometries=triangles, autocorrectGeometries=True, hasLighting=has_lightning)
+    topology = TerrainTopology(geometries=triangles, autocorrectGeometries=True,
+                               hasLighting=has_lightning)
     tile = EditableTerrainTile(west=minx, south=miny, east=maxx, north=maxy)
     tile.set_name("{}_{}_{}".format(z, x, y))
     tile.fromTerrainTopology(topology)
