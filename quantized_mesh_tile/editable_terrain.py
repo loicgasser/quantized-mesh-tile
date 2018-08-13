@@ -388,18 +388,18 @@ class EditableTerrainTile(TerrainTile):
         new_h = [None] * size_uvh
         new_v_light = [None] * size_uvh
         new_indices = [None] * size_indices
-        index_map = {}
+        index_map = [None] * size_uvh
 
         new_index = 0
         for position, old_i in enumerate(self.indices):
-            if old_i in index_map.keys():
+            if index_map[old_i]:
                 (new_i, positions) = index_map[old_i]
                 positions.append(position)
             else:
                 index_map[old_i] = (new_index, [position])
                 new_index += 1
 
-        for old_i, data in index_map.items():
+        for old_i, data in enumerate(index_map):
             (new_i, positions) = data
             new_u[new_i] = (self.u[old_i])
             new_v[new_i] = (self.v[old_i])
