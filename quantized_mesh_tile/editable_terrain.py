@@ -219,9 +219,12 @@ class EditableTerrainTile(TerrainTile):
     def save(self):
         """
         persists the current state of the tile, no matter if changes were made,
-        the old old state will be overwritten
+        the old old state will be overwritten, if the tile is already loaded from a file
         :return: void
         """
+        if not self._file_path:
+            raise Exception("No _file_path defined")
+
         target_dir_path = os.path.dirname(self._file_path)
         if not os.path.exists(target_dir_path):
             os.makedirs(target_dir_path)
@@ -381,6 +384,8 @@ class EditableTerrainTile(TerrainTile):
         Private method, should only used internally if any edits
         on self.u, self.v, self.h  are made.
         """
+        if self._changed_heights:
+            self.rebuild_h()
         size_indices = len(self.indices)
         size_uvh = len(self.u)
         new_u = [None] * size_uvh
