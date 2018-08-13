@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 # HACK READTHEDOCS (find a better solution)
 if '/home/docs/checkouts/readthedocs' in os.getcwd():
-    requires = []
+    requires = ['numpy', ]
 else:
     requires = ['shapely', 'numpy']
 

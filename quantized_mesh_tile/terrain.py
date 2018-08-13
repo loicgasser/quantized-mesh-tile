@@ -409,7 +409,8 @@ class TerrainTile(object):
 
         data = f.read(1)
         if data:
-            raise Exception('Should have reached end of file, but didn\'t')
+            # raise Exception('Should have reached end of file, but didn\'t')
+            pass
 
     def fromFile(self, filePath, hasLighting=False, hasWatermask=False, gzipped=False):
         """
@@ -496,7 +497,12 @@ class TerrainTile(object):
         )
         for i in xrange(0, vertexCount - 1):
             ud = self.u[i + 1] - self.u[i]
-            f.write(packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(ud)))
+            try:
+                f.write(packEntry(TerrainTile.vertexData['uVertexCount'],
+                                  zigZagEncode(ud)))
+            except IOError:
+                print("{0} of {1}: ud ({2})".format(i, vertexCount, ud))
+
         f.write(
             packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.v[0]))
         )

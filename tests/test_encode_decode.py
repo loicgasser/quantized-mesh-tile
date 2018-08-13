@@ -23,7 +23,8 @@ geometries = [
 class TestTopology(unittest.TestCase):
 
     def setUp(self):
-        self.tmpfile = 'tests/data/temp.terrain'
+        self.tmpfile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'data/temp.terrain')
 
     def tearDown(self):
         if os.path.exists(self.tmpfile):
