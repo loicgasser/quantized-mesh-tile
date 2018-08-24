@@ -240,6 +240,11 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
 
+        self.assertEqual(len(tile.westI), 2)
+        self.assertEqual(len(tile.eastI), 2)
+        self.assertEqual(len(tile.southI), 2)
+        self.assertEqual(len(tile.northI), 2)
+
         fileLike = tile.toBytesIO()
         self.assertIsInstance(fileLike, io.BytesIO)
 
@@ -256,6 +261,11 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._south, 0.0)
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
+
+        self.assertEqual(len(tile.westI), 2)
+        self.assertEqual(len(tile.eastI), 2)
+        self.assertEqual(len(tile.southI), 2)
+        self.assertEqual(len(tile.northI), 2)
 
         fileLike = tile.toBytesIO(gzipped=True)
         self.assertIsInstance(fileLike, io.BytesIO)

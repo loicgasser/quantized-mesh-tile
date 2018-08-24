@@ -28,7 +28,6 @@ from .utils import (
 from .bbsphere import BoundingSphere
 from .topology import TerrainTopology
 
-MAX = 32767.0
 # For a tile of 256px * 256px
 TILEPXS = 65536
 
@@ -182,6 +181,10 @@ class TerrainTile(object):
 
     BYTESPLIT = 65636
 
+    # min and max quantized values for indices
+    MIN = 0.0
+    MAX = 32767.0
+
     # Coordinates are given in lon/lat WSG84
     def __init__(self, *args, **kwargs):
         self._west = kwargs.get('west', -1.0)
@@ -299,16 +302,16 @@ class TerrainTile(object):
         if len(self._longs) == 0:
             for u in self.u:
                 self._longs.append(
-                    lerp(self._west, self._east, old_div(float(u), MAX)))
+                    lerp(self._west, self._east, old_div(float(u), self.MAX)))
             for v in self.v:
                 self._lats.append(
-                    lerp(self._south, self._north, old_div(float(v), MAX)))
+                    lerp(self._south, self._north, old_div(float(v), self.MAX)))
             for h in self.h:
                 self._heights.append(
                     lerp(
                         self.header['minimumHeight'],
                         self.header['maximumHeight'],
-                        old_div(float(h), MAX)
+                        old_div(float(h), self.MAX)
                     )
                 )
 
@@ -694,7 +697,7 @@ class TerrainTile(object):
         ecefMaxY = topology.ecefMaxY
         ecefMaxZ = topology.ecefMaxZ
 
-        # Center of the bounding box 3d (TODO verify)
+        # Center of the bounding box 3d
         centerCoords = [
             ecefMinX + (ecefMaxX - ecefMinX) * 0.5,
             ecefMinY + (ecefMaxY - ecefMinY) * 0.5,
@@ -729,8 +732,8 @@ class TerrainTile(object):
             elif k == 'horizonOcclusionPointZ':
                 self.header[k] = occlusionPCoords[2]
 
-        bLon = old_div(MAX, (self._east - self._west))
-        bLat = old_div(MAX, (self._north - self._south))
+        bLon = old_div(self.MAX, (self._east - self._west))
+        bLat = old_div(self.MAX, (self._north - self._south))
 
         def quantizeLonIndices(x):
             return int(round((x - self._west) * bLon))
@@ -744,7 +747,7 @@ class TerrainTile(object):
             def quantizeHeightIndices(x):
                 return 0
         else:
-            bHeight = old_div(MAX, deniv)
+            bHeight = old_div(self.MAX, deniv)
 
             def quantizeHeightIndices(x):
                 return int(
@@ -757,21 +760,19 @@ class TerrainTile(object):
         self.indices = topology.indexData
 
         # List all the vertices on the edge of the tile
-        # High water mark encoded?
-        for i in range(0, len(self.indices)):
-            # Use original coordinates
-            indice = self.indices[i]
-            lon = topology.uVertex[indice]
-            lat = topology.vVertex[indice]
+        # Use quantized values to determine if an indice belong to a tile edge
+        for indice in self.indices:
+            x = self.u[indice]
+            y = self.v[indice]
 
-            if lon == self._west and indice not in self.westI:
+            if x == self.MIN and indice not in self.westI:
                 self.westI.append(indice)
-            elif lon == self._east and indice not in self.eastI:
+            elif x == self.MAX and indice not in self.eastI:
                 self.eastI.append(indice)
 
-            if lat == self._south and indice not in self.southI:
+            if y == self.MIN and indice not in self.southI:
                 self.southI.append(indice)
-            elif lat == self._north and indice not in self.northI:
+            elif y == self.MAX and indice not in self.northI:
                 self.northI.append(indice)
 
         self.hasLighting = topology.hasLighting
