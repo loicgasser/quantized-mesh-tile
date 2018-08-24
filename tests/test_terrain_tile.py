@@ -95,6 +95,13 @@ class TestTerrainTile(unittest.TestCase):
         for i, v in enumerate(ter.northI):
             self.assertEqual(v, ter2.northI[i], i)
 
+        # check vertice sitting on the edge
+        # we already know the number of indices on the edges
+        self.assertEqual(len(ter2.westI), 30)
+        self.assertEqual(len(ter2.eastI), 10)
+        self.assertEqual(len(ter2.southI), 14)
+        self.assertEqual(len(ter2.northI), 25)
+
         self.assertEqual(ter2.getContentType(),
                          'application/vnd.quantized-mesh')
 
