@@ -167,13 +167,15 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(len(ter.watermask), len(ter2.watermask))
         self.assertEqual(len(ter.watermask[0]), len(ter2.watermask[0]))
 
-        sign = lambda a: 1 if a > 0 else -1 if a < 0 else 0
+        def sign(a):
+            return 1 if a > 0 else -1 if a < 0 else 0
         for i in range(0, len(ter.vLight)):
             for j in range(0, 3):
                 # We cannot have an exact equality with successive
                 # oct encoding and decoding
                 # Thus we only check the sign
-                self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
+                self.assertEqual(
+                    sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
 
         self.assertEqual(ter2.getContentType(),
                          'application/vnd.quantized-mesh;' +
