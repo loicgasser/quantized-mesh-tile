@@ -8,3 +8,4 @@ build/
 doc/build/
 .idea/
 .coverage
+.vscode

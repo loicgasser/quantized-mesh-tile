@@ -59,9 +59,7 @@ We use flake8 to lint the project. Here are the rules we ignore.
 * E221: multiple spaces before operator
 * E241: multiple spaces after ':'
 * E251: multiple spaces around keyword/parameter equals
-* E272: multiple spaces before keyword
-* E731: do not assign a lambda expression, use a def
-* W503: line break before binary operator
+* E402: module level import not at top of file
 
 Vizualize a terrain tile
 ------------------------

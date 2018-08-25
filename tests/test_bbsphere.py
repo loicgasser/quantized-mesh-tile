@@ -73,7 +73,8 @@ class TestBoundingSphere(unittest.TestCase):
         ter = TerrainTile(west=minx, south=miny, east=maxx, north=maxy)
         ter.fromFile('tests/data/%s_%s_%s.terrain' % (z, x, y))
 
-        llh2ecef = lambda x: LLH2ECEF(x[0], x[1], x[2])
+        def llh2ecef(x):
+            return LLH2ECEF(x[0], x[1], x[2])
         coords = ter.getVerticesCoordinates()
         coords = list(map(llh2ecef, coords))
         sphere = BoundingSphere()

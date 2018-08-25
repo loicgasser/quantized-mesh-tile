@@ -30,15 +30,6 @@ def packIndices(f, type, indices):
         f.write(packEntry(type, i))
 
 
-def unpackIndices(f, indicesCount, indicesType):
-    indices = []
-    for i in xrange(0, indicesCount):
-        indices.append(
-            unpackEntry(f, indicesType)
-        )
-    return indices
-
-
 def decodeIndices(indices):
     out = []
     highest = 0

@@ -24,7 +24,9 @@ def LLH2ECEF(lon, lat, alt):
     lat *= (old_div(math.pi, 180.0))
     lon *= (old_div(math.pi, 180.0))
 
-    n = lambda x: old_div(wgs84_a, math.sqrt(1 - wgs84_e2 * (math.sin(x) ** 2)))
+    def n(x):
+        return old_div(wgs84_a, math.sqrt(
+            1 - wgs84_e2 * (math.sin(x) ** 2)))
 
     x = (n(lat) + alt) * math.cos(lat) * math.cos(lon)
     y = (n(lat) + alt) * math.cos(lat) * math.sin(lon)

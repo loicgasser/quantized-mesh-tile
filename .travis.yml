@@ -2,6 +2,7 @@ language: python
 python:
   - "2.7"
   - "3.4"
+  - "3.6"
 before_install:
 - sudo apt-get remove -y libgdal1
 - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
@@ -13,6 +14,6 @@ install:
 - pip install flake8
 - pip install coveralls
 script:
-- flake8 --max-line-length=90 --ignore=E128,E221,E241,E251,E272,E731,W503,E402 quantized_mesh_tile tests
+- flake8 --max-line-length=90 --ignore=E128,E221,E241,E251,E402 quantized_mesh_tile tests
 - coverage run --source=quantized_mesh_tile setup.py test
 after_success: coveralls

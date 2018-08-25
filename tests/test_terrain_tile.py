@@ -95,6 +95,13 @@ class TestTerrainTile(unittest.TestCase):
         for i, v in enumerate(ter.northI):
             self.assertEqual(v, ter2.northI[i], i)
 
+        # check vertice sitting on the edge
+        # we already know the number of indices on the edges
+        self.assertEqual(len(ter2.westI), 30)
+        self.assertEqual(len(ter2.eastI), 10)
+        self.assertEqual(len(ter2.southI), 14)
+        self.assertEqual(len(ter2.northI), 25)
+
         self.assertEqual(ter2.getContentType(),
                          'application/vnd.quantized-mesh')
 
@@ -167,13 +174,15 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(len(ter.watermask), len(ter2.watermask))
         self.assertEqual(len(ter.watermask[0]), len(ter2.watermask[0]))
 
-        sign = lambda a: 1 if a > 0 else -1 if a < 0 else 0
+        def sign(a):
+            return 1 if a > 0 else -1 if a < 0 else 0
         for i in range(0, len(ter.vLight)):
             for j in range(0, 3):
                 # We cannot have an exact equality with successive
                 # oct encoding and decoding
                 # Thus we only check the sign
-                self.assertEqual(sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
+                self.assertEqual(
+                    sign(ter.vLight[i][j]), sign(ter2.vLight[i][j]))
 
         self.assertEqual(ter2.getContentType(),
                          'application/vnd.quantized-mesh;' +
@@ -238,6 +247,11 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
 
+        self.assertEqual(len(tile.westI), 2)
+        self.assertEqual(len(tile.eastI), 2)
+        self.assertEqual(len(tile.southI), 2)
+        self.assertEqual(len(tile.northI), 2)
+
         fileLike = tile.toBytesIO()
         self.assertIsInstance(fileLike, io.BytesIO)
 
@@ -254,6 +268,11 @@ class TestTerrainTile(unittest.TestCase):
         self.assertEqual(tile._south, 0.0)
         self.assertEqual(tile._east, 1.0)
         self.assertEqual(tile._north, 1.0)
+
+        self.assertEqual(len(tile.westI), 2)
+        self.assertEqual(len(tile.eastI), 2)
+        self.assertEqual(len(tile.southI), 2)
+        self.assertEqual(len(tile.northI), 2)
 
         fileLike = tile.toBytesIO(gzipped=True)
         self.assertIsInstance(fileLike, io.BytesIO)

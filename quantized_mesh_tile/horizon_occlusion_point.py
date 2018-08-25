@@ -40,11 +40,13 @@ def fromPoints(points, boundingSphere):
         raise Exception('Your list of points must contain at least 2 points')
 
     # Bring coordinates to ellipsoid scaled coordinates
-    scaleDown = lambda coord: [coord[0] * rX, coord[1] * rY, coord[2] * rZ]
+    def scaleDown(coord):
+        return [coord[0] * rX, coord[1] * rY, coord[2] * rZ]
     scaledPoints = list(map(scaleDown, points))
     scaledSphereCenter = scaleDown(boundingSphere.center)
 
-    magnitude = lambda coord: computeMagnitude(coord, scaledSphereCenter)
+    def magnitude(coord):
+        return computeMagnitude(coord, scaledSphereCenter)
     magnitudes = list(map(magnitude, scaledPoints))
 
     return c3d.multiplyByScalar(scaledSphereCenter, max(magnitudes))
