@@ -195,6 +195,9 @@ class TerrainTile(object):
         self._lats = []
         self._heights = []
         self._triangles = []
+        self._workingUnitLongitude = None
+        self._workingUnitLatitude = None
+        self._deltaHeight = None
         self.EPSG = 4326
 
         # Extensions
@@ -529,6 +532,52 @@ class TerrainTile(object):
             with gzip.open(filePath, 'wb') as f:
                 self._writeTo(f)
 
+    def _getWorkingUnitLatitude(self):
+        if not self._workingUnitLatitude:
+            self._workingUnitLatitude = old_div(self.MAX, (self._north - self._south))
+        return self._workingUnitLatitude
+
+    def _getWorkingUnitLongitude(self):
+        if not self._workingUnitLongitude:
+            self._workingUnitLongitude = old_div(self.MAX, (self._east - self._west))
+        return self._workingUnitLongitude
+
+    def _getDeltaHeight(self):
+        if not self._deltaHeight:
+            maxHeight = self.header['maximumHeight']
+            minHeight = self.header['minimumHeight']
+            self._deltaHeight = maxHeight - minHeight
+        return self._deltaHeight
+
+    def _quantizeLatitude(self, latitude):
+        return int(round((latitude - self._south) *
+                         self._getWorkingUnitLatitude()))
+
+    def _quantizeLongitude(self, longitude):
+        return int(round((longitude - self._west) *
+                         self._getWorkingUnitLongitude()))
+
+    def _quantizeHeight(self, height):
+        deniv = self._getDeltaHeight()
+        # In case a tile is completely flat
+        if deniv == 0:
+            h = 0
+        else:
+            workingUnitHeight = old_div(self.MAX, deniv)
+            h = int(round((height - self.header['minimumHeight']) * workingUnitHeight))
+        return h
+
+    def _dequantizeHeight(self, h):
+        """
+        Private helper method to convert quantized tile (h) values to real world height
+        values
+        :param h: the quantized height value
+        :return: the height in ground units (meter)
+        """
+        return lerp(self.header['minimumHeight'],
+                    self.header['maximumHeight'],
+                    old_div(float(h), self.MAX))
+
     def _writeTo(self, f):
         """
         A private method to write the terrain tile to a file or file-like object.
@@ -732,31 +781,10 @@ class TerrainTile(object):
             elif k == 'horizonOcclusionPointZ':
                 self.header[k] = occlusionPCoords[2]
 
-        bLon = old_div(self.MAX, (self._east - self._west))
-        bLat = old_div(self.MAX, (self._north - self._south))
-
-        def quantizeLonIndices(x):
-            return int(round((x - self._west) * bLon))
-
-        def quantizeLatIndices(x):
-            return int(round((x - self._south) * bLat))
-
-        deniv = self.header['maximumHeight'] - self.header['minimumHeight']
-        # In case a tile is completely flat
-        if deniv == 0:
-            def quantizeHeightIndices(x):
-                return 0
-        else:
-            bHeight = old_div(self.MAX, deniv)
-
-            def quantizeHeightIndices(x):
-                return int(
-                    round((x - self.header['minimumHeight']) * bHeight))
-
         # High watermark encoding performed during toFile
-        self.u = list(map(quantizeLonIndices, topology.uVertex))
-        self.v = list(map(quantizeLatIndices, topology.vVertex))
-        self.h = list(map(quantizeHeightIndices, topology.hVertex))
+        self.u = list(map(self._quantizeLongitude, topology.uVertex))
+        self.v = list(map(self._quantizeLatitude, topology.vVertex))
+        self.h = list(map(self._quantizeHeight, topology.hVertex))
         self.indices = topology.indexData
 
         # List all the vertices on the edge of the tile
