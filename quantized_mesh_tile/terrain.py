@@ -544,18 +544,18 @@ class TerrainTile(object):
 
     def _getDeltaHeight(self):
         if not self._deltaHeight:
-            max = self.header['maximumHeight']
-            min = self.header['minimumHeight']
-            self._deltaHeight = max - min
+            maxHeight = self.header['maximumHeight']
+            minHeight = self.header['minimumHeight']
+            self._deltaHeight = maxHeight - minHeight
         return self._deltaHeight
 
     def _quantizeLatitude(self, latitude):
-        v = int(round((latitude - self._south) * self._getWorkingUnitLatitude()))
-        return v
+        return int(round((latitude - self._south) *
+                         self._getWorkingUnitLatitude()))
 
     def _quantizeLongitude(self, longitude):
-        u = int(round((longitude - self._west) * self._getWorkingUnitLongitude()))
-        return u
+        return int(round((longitude - self._west) *
+                         self._getWorkingUnitLongitude()))
 
     def _quantizeHeight(self, height):
         deniv = self._getDeltaHeight()
