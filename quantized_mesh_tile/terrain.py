@@ -409,7 +409,8 @@ class TerrainTile(object):
         if data:
             raise Exception('Should have reached end of file, but didn\'t')
 
-    def _iterUnpackAndDecodeVertices(self, f, vertexCount, structType):
+    @staticmethod
+    def _iterUnpackAndDecodeVertices(f, vertexCount, structType):
         """
         A private method to itertatively unpack and decode indices.
         """
@@ -421,7 +422,8 @@ class TerrainTile(object):
             yield delta
             i += 1
 
-    def _iterUnpackIndices(self, f, indicesCount, structType):
+    @staticmethod
+    def _iterUnpackIndices(f, indicesCount, structType):
         """
         A private method to iteratively unpack indices
         """
@@ -430,7 +432,8 @@ class TerrainTile(object):
             yield unpackEntry(f, structType)
             i += 1
 
-    def _iterUnpackAndDecodeLight(self, f, extensionLength, structType):
+    @staticmethod
+    def _iterUnpackAndDecodeLight(f, extensionLength, structType):
         """
         A private method to iteratively unpack light vector.
         """
@@ -445,7 +448,8 @@ class TerrainTile(object):
             )
             i += 1
 
-    def _iterUnpackWatermaskRow(self, f, extensionLength, structType):
+    @staticmethod
+    def _iterUnpackWatermaskRow(f, extensionLength, structType):
         """
         A private method to iteratively unpack watermask rows
         """
