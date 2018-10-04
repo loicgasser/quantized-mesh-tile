@@ -64,16 +64,16 @@ We use flake8 to lint the project. Here are the rules we ignore.
 Vizualize a terrain tile
 ------------------------
 
-Here is a viewer to vizualize the geometry of a single tile.
+Here is a viewer to vizualize the geometry of a single tile. Make sure you have CORS enabled.
 Unit vectors are also displayed if they are present.
 
 .. raw:: html
 
   <form class="tile" onsubmit="reload(event)">
-    z: <input type="text" name="z" value="14"><br><br>
-    x: <input type="text" name="x" value="24297"><br><br>
-    y: <input type="text" name="y" value="10735"><br><br>
-    tileUrl: <input type="text" name="tileUrl" value="https://assets.agi.com/stk-terrain/world/14/24297/10735.terrain?v=1.16389.0" style="width: 489px;"><br><br>
+    z: <input type="text" name="z" value="9"><br><br>
+    x: <input type="text" name="x" value="536"><br><br>
+    y: <input type="text" name="y" value="391"><br><br>
+    tileUrl: <input type="text" name="tileUrl" value="https://maps.tilehosting.com/data/terrain-quantized-mesh/9/536/391.terrain?key=wYrAjVu6bV6ycoXliAPl" style="width: 489px;"><br><br>
     <button type="submit" value="submit">Go to viewer</button>
   </form>
 

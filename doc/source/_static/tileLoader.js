@@ -172,20 +172,26 @@ var updateScene = function(z, x, y, tileUrl) {
 };
 
 var loadTerrain = function(tileUrl) {
-  var terrainLoader = new THREE.TerrainLoader();
-  terrainLoader.load(tileUrl, function(data) {
+  var data;
+  var request = new XMLHttpRequest();
+  request.addEventListener( 'load', function ( event ) {
+    try {
+      data = new Uint16Array( event.target.response );
+    } catch {
+      data = new Uint32Array( event.target.response );
+    }
     var geometry = new THREE.PlaneGeometry(60, 60, 199, 199);
     for (var i = 0, l = geometry.vertices.length; i < l; i++) {
       geometry.vertices[i].z = data[i] / 65535 * 10;
     }
     var plane = new THREE.Mesh(geometry, material);
-  });
-  controls = new THREE.TrackballControls(camera); 
+  })
+  controls = new THREE.TrackballControls(camera);
   document.getElementById('webgl').appendChild(renderer.domElement);
 };
 
 function render() {
-  controls.update();    
+  controls.update();
   id = requestAnimationFrame(render);
   renderer.render(scene, camera);
 }
@@ -235,7 +241,7 @@ var addTile = function(lod, x, y, tileUrl) {
 
 $(document).ready(function() {
   var QueryString = function () {
-    // This function is anonymous, is executed immediately and 
+    // This function is anonymous, is executed immediately and
     // the return value is assigned to QueryString!
     var query_string = {};
     var query = window.location.search.substring(1);
@@ -253,7 +259,7 @@ $(document).ready(function() {
       } else {
         query_string[pair[0]].push(decodeURIComponent(pair[1]));
       }
-    } 
+    }
     return query_string;
   }();
   var z = parseInt(QueryString.z);
@@ -261,8 +267,8 @@ $(document).ready(function() {
   var y = parseInt(QueryString.y);
   var tileUrl = QueryString.tileUrl;
   if (!z || !x || !y || !tileUrl) {
-    updateScene(14, 24297, 10735, 'https://assets.agi.com/stk-terrain/world/14/24297/10735.terrain?v=1.16389.0');
+    updateScene(9, 536, 391, 'https://maps.tilehosting.com/data/terrain-quantized-mesh/9/536/391.terrain?key=wYrAjVu6bV6ycoXliAPl');
   } else {
     updateScene(z, x, y, tileUrl);
-  } 
+  }
 });
