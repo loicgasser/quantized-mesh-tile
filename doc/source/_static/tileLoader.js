@@ -267,7 +267,7 @@ $(document).ready(function() {
   var y = parseInt(QueryString.y);
   var tileUrl = QueryString.tileUrl;
   if (!z || !x || !y || !tileUrl) {
-    updateScene(9, 536, 391, 'https://maps.tilehosting.com/data/terrain-quantized-mesh/9/536/391.terrain?key=wYrAjVu6bV6ycoXliAPl');
+    updateScene(9, 536, 391, 'https://maps.tilehosting.com/data/terrain-quantized-mesh/9/536/391.terrain?key=NUcY4qrAupTlR2xMwK6G');
   } else {
     updateScene(z, x, y, tileUrl);
   }
