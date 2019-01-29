@@ -73,7 +73,7 @@ Unit vectors are also displayed if they are present.
     z: <input type="text" name="z" value="9"><br><br>
     x: <input type="text" name="x" value="536"><br><br>
     y: <input type="text" name="y" value="391"><br><br>
-    tileUrl: <input type="text" name="tileUrl" value="https://maps.tilehosting.com/data/terrain-quantized-mesh/9/536/391.terrain?key=wYrAjVu6bV6ycoXliAPl" style="width: 489px;"><br><br>
+    tileUrl: <input type="text" name="tileUrl" value="https://maps.tilehosting.com/data/terrain-quantized-mesh/9/536/391.terrain?key=NUcY4qrAupTlR2xMwK6G" style="width: 489px;"><br><br>
     <button type="submit" value="submit">Go to viewer</button>
   </form>
 
