@@ -203,8 +203,7 @@ class TerrainTile(object):
         # Extensions
         self.vLight = []
         self.watermask = kwargs.get('watermask', [])
-        self.hasWatermask = kwargs.get(
-            'hasWatermask', bool(len(self.watermask) > 0))
+        self.hasWatermask = kwargs.get('hasWatermask', bool(self.watermask))
 
         self.header = OrderedDict()
         for k in TerrainTile.quantizedMeshHeader.keys():
@@ -302,7 +301,7 @@ class TerrainTile(object):
         """
         A private method to compute the vertices coordinates.
         """
-        if len(self._longs) == 0:
+        if not self._longs:
             for u in self.u:
                 self._longs.append(
                     lerp(self._west, self._east, old_div(float(u), self.MAX)))
@@ -465,7 +464,7 @@ class TerrainTile(object):
             else:
                 i += 1
             xyCount += 1
-        if len(row) > 0:
+        if row:
             yield row
 
     def fromFile(self, filePath, hasLighting=False, hasWatermask=False, gzipped=False):
@@ -653,7 +652,7 @@ class TerrainTile(object):
             f.write(packEntry(meta['northIndices'], ni))
 
         # Extension header for light
-        if len(self.vLight) > 0:
+        if self.vLight:
             self.hasLighting = True
             meta = TerrainTile.ExtensionHeader
             # Extension header ID is 1 for lightening
@@ -667,7 +666,7 @@ class TerrainTile(object):
                 f.write(packEntry(metaV['xy'], x))
                 f.write(packEntry(metaV['xy'], y))
 
-        if len(self.watermask) > 0:
+        if self.watermask:
             self.hasWatermask = True
             # Extension header ID is 2 for watermark
             meta = TerrainTile.ExtensionHeader
@@ -729,8 +728,8 @@ class TerrainTile(object):
             self._east = bounds[2]
             self._south = bounds[1]
             self._north = bounds[3]
-        elif len(set([self._west, self._south, self._east, self._north]).difference(
-                set([-1.0, -1.0, 1.0, 1.0]))) != 0:
+        elif set([self._west, self._south, self._east, self._north]).difference(
+                set([-1.0, -1.0, 1.0, 1.0])):
             # Bounds already defined earlier
             pass
         else:

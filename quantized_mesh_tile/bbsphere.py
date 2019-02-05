@@ -29,10 +29,10 @@ class BoundingSphere(object):
     # Based on Ritter's algorithm
     def fromPoints(self, points):
 
-        if len(points) < 2:
+        nbPositions = len(points)
+        if nbPositions < 2:
             raise Exception('Your list of points must contain at least 2 points')
 
-        nbPositions = len(points)
         for i in xrange(0, nbPositions):
             point = points[i]
 

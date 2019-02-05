@@ -81,7 +81,7 @@ class TerrainTopology(object):
         self.faces = []
         self.verticesLookup = {}
 
-        if len(self.geometries) > 0:
+        if self.geometries:
             self.addGeometries(self.geometries)
 
     def __repr__(self):
@@ -123,7 +123,7 @@ class TerrainTopology(object):
             A list of triplet of vertices using the following structure:
             ``(((lon0/lat0/height0),(...),(lon2,lat2,height2)),(...))``
         """
-        if isinstance(geometries, (list, tuple)) and len(geometries) > 0:
+        if isinstance(geometries, (list, tuple)) and geometries:
             for geometry in geometries:
                 if isinstance(geometry, (str, bytes)):
                     geometry = self._loadGeometry(geometry)
