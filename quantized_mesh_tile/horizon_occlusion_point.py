@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from builtins import map
-from past.utils import old_div
+from __future__ import absolute_import, division
+
 import math
+from builtins import map
+
 import numpy as np
+from past.utils import old_div
 
 from . import cartesian3d as c3d
 from . import llh_ecef as ecef

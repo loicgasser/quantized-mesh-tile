@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from quantized_mesh_tile.utils import zigZagEncode, zigZagDecode
+
+from quantized_mesh_tile.utils import zigZagDecode, zigZagEncode
 
 
 class TestZigZag(unittest.TestCase):

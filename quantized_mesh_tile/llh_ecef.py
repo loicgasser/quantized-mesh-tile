@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-from past.utils import old_div
+
 import math
+
+from past.utils import old_div
 
 # Constants taken from http://cesiumjs.org/2013/04/25/Horizon-culling/
 radiusX = 6378137.0

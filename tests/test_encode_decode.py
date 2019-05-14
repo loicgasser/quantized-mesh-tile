@@ -2,9 +2,9 @@
 
 import os
 import unittest
-from quantized_mesh_tile import encode, decode
-from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
+from quantized_mesh_tile import decode, encode
+from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 
 # Partial tile
 geometries = [

@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from future import standard_library
+from __future__ import absolute_import, division
 
-standard_library.install_aliases()
-from past.builtins import xrange
-from past.utils import old_div
-import math
 import gzip
 import io
+import math
+from struct import calcsize, pack, unpack
+
 import numpy as np
+from future import standard_library
+from past.builtins import xrange
+from past.utils import old_div
+
 from . import cartesian3d as c3d
-from struct import pack, unpack, calcsize
+
+standard_library.install_aliases()
 
 EPSILON6 = 0.000001
 

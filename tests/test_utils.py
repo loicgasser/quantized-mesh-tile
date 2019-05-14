@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+
 from quantized_mesh_tile.utils import octDecode, octEncode
 
 

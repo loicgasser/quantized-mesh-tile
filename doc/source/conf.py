@@ -26,10 +26,16 @@
 #
 # needs_sphinx = '1.0'
 
+# http://read-the-docs.readthedocs.io/en/latest/faq.html?highlight=mock
+# Mocks for read-the-docs
+import sys
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 import sphinx_rtd_theme
+from mock import Mock as MagicMock
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
@@ -339,10 +345,6 @@ texinfo_documents = [
 #
 # texinfo_no_detailmenu = False
 
-# http://read-the-docs.readthedocs.io/en/latest/faq.html?highlight=mock
-# Mocks for read-the-docs
-import sys
-from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod

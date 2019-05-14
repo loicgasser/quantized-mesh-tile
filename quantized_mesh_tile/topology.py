@@ -5,17 +5,19 @@ Reference
 """
 from __future__ import division
 
-
-from builtins import object
-from past.utils import old_div
 import math
+from builtins import object
+
 import numpy as np
-from .llh_ecef import LLH2ECEF
-from .utils import computeNormals, collapseIntoTriangles
+from past.utils import old_div
+
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb
 from shapely.wkt import loads as load_wkt
+
+from .llh_ecef import LLH2ECEF
+from .utils import collapseIntoTriangles, computeNormals
 
 
 class TerrainTopology(object):

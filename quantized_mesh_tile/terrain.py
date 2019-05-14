@@ -5,28 +5,26 @@ https://github.com/AnalyticalGraphicsInc/quantized-mesh
 Reference
 ---------
 """
-from __future__ import absolute_import
-from __future__ import division
+from __future__ import absolute_import, division
 
-from future import standard_library
-
-standard_library.install_aliases()
-from builtins import map
-from past.builtins import xrange
-from builtins import object
-from past.utils import old_div
-import os
 import gzip
 import io
+import os
+from builtins import map, object
 from collections import OrderedDict
+
+from future import standard_library
+from past.builtins import xrange
+from past.utils import old_div
+
 from . import horizon_occlusion_point as occ
-from .utils import (
-    octEncode, octDecode, zigZagDecode, zigZagEncode,
-    gzipFileObject, ungzipFileObject, unpackEntry,
-    decodeIndices, packEntry, packIndices, encodeIndices
-)
 from .bbsphere import BoundingSphere
 from .topology import TerrainTopology
+from .utils import (decodeIndices, encodeIndices, gzipFileObject, octDecode,
+                    octEncode, packEntry, packIndices, ungzipFileObject,
+                    unpackEntry, zigZagDecode, zigZagEncode)
+
+standard_library.install_aliases()
 
 # For a tile of 256px * 256px
 TILEPXS = 65536

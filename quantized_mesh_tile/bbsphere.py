@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
+from __future__ import absolute_import, division
 
 import math
-from builtins import map
-from builtins import object
-from past.builtins import xrange
+from builtins import map, object
 
+from past.builtins import xrange
 from past.utils import old_div
 
 from . import cartesian3d as c3d

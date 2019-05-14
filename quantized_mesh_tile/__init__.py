@@ -5,13 +5,13 @@ Reference
 ---------
 """
 
-from .terrain import TerrainTile
-from .topology import TerrainTopology
-
-
 # Enable Shapely "speedups" if available
 # http://toblerity.org/shapely/manual.html#performance
 from shapely import speedups
+
+from .terrain import TerrainTile
+from .topology import TerrainTopology
+
 if speedups.available:
     speedups.enable()
 

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from quantized_mesh_tile.llh_ecef import LLH2ECEF, ECEF2LLH
+
+from quantized_mesh_tile.llh_ecef import ECEF2LLH, LLH2ECEF
 
 # Conversion reference
 # http://www.oc.nps.edu/oc2902w/coord/llhxyz.htm
