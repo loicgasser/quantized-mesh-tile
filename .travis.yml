@@ -1,8 +1,9 @@
+dist: xenial
 language: python
 python:
   - "2.7"
-  - "3.4"
   - "3.6"
+  - "3.7"
 before_install:
 - sudo apt-get remove -y libgdal1
 - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
@@ -13,7 +14,9 @@ install:
 - pip install nose
 - pip install flake8
 - pip install coveralls
+- pip install isort
 script:
 - flake8
+- isort --recursive --check-only --diff --skip .eggs
 - coverage run --source=quantized_mesh_tile setup.py test
 after_success: coveralls

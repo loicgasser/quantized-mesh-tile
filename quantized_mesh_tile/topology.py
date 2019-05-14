@@ -10,6 +10,7 @@ from builtins import object
 
 import numpy as np
 from past.utils import old_div
+
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb
