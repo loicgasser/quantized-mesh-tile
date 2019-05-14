@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from builtins import str
 import unittest
+from builtins import str
+
 from quantized_mesh_tile.utils import collapseIntoTriangles
 
 

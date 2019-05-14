@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+
 from quantized_mesh_tile.topology import TerrainTopology
 
 # Must be defined counter clock wise order

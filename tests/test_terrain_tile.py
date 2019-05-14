@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from future import standard_library
-
-standard_library.install_aliases()
-from builtins import range
+import io
 import os
 import unittest
-import io
+from builtins import range
+
+from future import standard_library
+
+from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 from quantized_mesh_tile.terrain import TerrainTile
 from quantized_mesh_tile.topology import TerrainTopology
-from quantized_mesh_tile.global_geodetic import GlobalGeodetic
+
+standard_library.install_aliases()
 
 
 class TestTerrainTile(unittest.TestCase):

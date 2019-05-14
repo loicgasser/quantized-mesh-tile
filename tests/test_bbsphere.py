@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from builtins import map
 import unittest
+from builtins import map
+
 import quantized_mesh_tile.cartesian3d as c3d
-from quantized_mesh_tile.terrain import TerrainTile
-from quantized_mesh_tile.llh_ecef import LLH2ECEF
 from quantized_mesh_tile.bbsphere import BoundingSphere
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
+from quantized_mesh_tile.llh_ecef import LLH2ECEF
+from quantized_mesh_tile.terrain import TerrainTile
 
 
 class TestBoundingSphere(unittest.TestCase):

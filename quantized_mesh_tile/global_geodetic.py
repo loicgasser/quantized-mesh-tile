@@ -16,10 +16,11 @@ Reference
 ---------
 """
 from __future__ import division
-from builtins import range
-from builtins import object
-from past.utils import old_div
+
 import math
+from builtins import object, range
+
+from past.utils import old_div
 
 MAXZOOMLEVEL = 32
 
