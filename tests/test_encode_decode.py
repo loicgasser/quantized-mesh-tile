@@ -29,16 +29,7 @@ class TestTopology(unittest.TestCase):
         if os.path.exists(self.tmpfile):
             os.remove(self.tmpfile)
 
-    def testEncodeDecode(self):
-        z = 0
-        x = 0
-        y = 0
-        globalGeodetic = GlobalGeodetic(True)
-        bounds = globalGeodetic.TileBounds(x, y, z)
-        ter = encode(geometries, bounds=bounds)
-        ter.toFile(self.tmpfile)
-        ter2 = decode(self.tmpfile, bounds)
-
+    def assert_tile(self, ter, ter2):
         self.assertIsInstance(ter.__repr__(), str)
         self.assertIsInstance(ter2.__repr__(), str)
 
@@ -76,5 +67,27 @@ class TestTopology(unittest.TestCase):
         for i, v in enumerate(ter.westI):
             self.assertEqual(v, ter2.westI[i], i)
 
+    def testEncodeDecode(self):
+        z = 0
+        x = 0
+        y = 0
+        globalGeodetic = GlobalGeodetic(True)
+        bounds = globalGeodetic.TileBounds(x, y, z)
+        ter = encode(geometries, bounds=bounds)
+        ter.toFile(self.tmpfile)
+        ter2 = decode(self.tmpfile, bounds)
+        self.assert_tile(ter, ter2)
+        # Partial tile nothing on the east edge
         self.assertEqual(len(ter.eastI), 0)
+        self.assertEqual(len(ter.eastI), len(ter2.eastI))
+
+    def testEncodeDecodeNoBounds(self):
+        ter = encode(geometries)
+        ter.toFile(self.tmpfile)
+        bounds = ter.bounds
+        ter2 = decode(self.tmpfile, bounds)
+        self.assert_tile(ter, ter2)
+        # Bounds computed dynamically from partial tile
+        # east edge now has data
+        self.assertGreater(len(ter.eastI), 0)
         self.assertEqual(len(ter.eastI), len(ter2.eastI))

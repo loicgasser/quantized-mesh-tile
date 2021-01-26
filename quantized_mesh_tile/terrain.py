@@ -5,17 +5,11 @@ https://github.com/AnalyticalGraphicsInc/quantized-mesh
 Reference
 ---------
 """
-from __future__ import absolute_import, division
 
 import gzip
 import io
 import os
-from builtins import map, object
 from collections import OrderedDict
-
-from future import standard_library
-from past.builtins import xrange
-from past.utils import old_div
 
 from . import horizon_occlusion_point as occ
 from .bbsphere import BoundingSphere
@@ -23,8 +17,6 @@ from .topology import TerrainTopology
 from .utils import (decodeIndices, encodeIndices, gzipFileObject, octDecode,
                     octEncode, packEntry, packIndices, ungzipFileObject,
                     unpackEntry, zigZagDecode, zigZagEncode)
-
-standard_library.install_aliases()
 
 # For a tile of 256px * 256px
 TILEPXS = 65536
@@ -237,11 +229,15 @@ class TerrainTile(object):
         msg += '\nnorthIndicesCount: %s' % len(self.northI)
         msg += '\nnorthIndices: %s\n' % self.northI
         # Output coordinates
-        msg += '\nNumber of triangles: %s' % (old_div(len(self.indices), 3))
+        msg += '\nNumber of triangles: %s' % (len(self.indices) // 3)
         msg += '\nTriangles coordinates in EPSG %s' % self.EPSG
         msg += '\n%s' % self.getTrianglesCoordinates()
 
         return msg
+
+    @property
+    def bounds(self):
+        return [self._west, self._south, self._east, self._north]
 
     def getContentType(self):
         """
@@ -277,7 +273,7 @@ class TerrainTile(object):
         nbTriangles = len(self.indices)
         if nbTriangles % 3 != 0:
             raise Exception('Corrupted tile')
-        for i in xrange(0, nbTriangles - 1, 3):
+        for i in range(0, nbTriangles - 1, 3):
             vi1 = self.indices[i]
             vi2 = self.indices[i + 1]
             vi3 = self.indices[i + 2]
@@ -302,16 +298,16 @@ class TerrainTile(object):
         if not self._longs:
             for u in self.u:
                 self._longs.append(
-                    lerp(self._west, self._east, old_div(float(u), self.MAX)))
+                    lerp(self._west, self._east, u / self.MAX))
             for v in self.v:
                 self._lats.append(
-                    lerp(self._south, self._north, old_div(float(v), self.MAX)))
+                    lerp(self._south, self._north, v / self.MAX))
             for h in self.h:
                 self._heights.append(
                     lerp(
                         self.header['minimumHeight'],
                         self.header['maximumHeight'],
-                        old_div(float(h), self.MAX)
+                        h / self.MAX
                     )
                 )
 
@@ -435,7 +431,7 @@ class TerrainTile(object):
         A private method to iteratively unpack light vector.
         """
         i = 0
-        xyCount = old_div(extensionLength, 2)
+        xyCount = extensionLength / 2
         while i != xyCount:
             yield octDecode(
                 unpackEntry(
@@ -535,12 +531,12 @@ class TerrainTile(object):
 
     def _getWorkingUnitLatitude(self):
         if not self._workingUnitLatitude:
-            self._workingUnitLatitude = old_div(self.MAX, (self._north - self._south))
+            self._workingUnitLatitude = self.MAX / (self._north - self._south)
         return self._workingUnitLatitude
 
     def _getWorkingUnitLongitude(self):
         if not self._workingUnitLongitude:
-            self._workingUnitLongitude = old_div(self.MAX, (self._east - self._west))
+            self._workingUnitLongitude = self.MAX / (self._east - self._west)
         return self._workingUnitLongitude
 
     def _getDeltaHeight(self):
@@ -564,7 +560,7 @@ class TerrainTile(object):
         if deniv == 0:
             h = 0
         else:
-            workingUnitHeight = old_div(self.MAX, deniv)
+            workingUnitHeight = self.MAX / deniv
             h = int(round((height - self.header['minimumHeight']) * workingUnitHeight))
         return h
 
@@ -577,7 +573,7 @@ class TerrainTile(object):
         """
         return lerp(self.header['minimumHeight'],
                     self.header['maximumHeight'],
-                    old_div(float(h), self.MAX))
+                    h / self.MAX)
 
     def _writeTo(self, f):
         """
@@ -596,7 +592,7 @@ class TerrainTile(object):
             packEntry(
                 TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.u[0]))
         )
-        for i in xrange(0, vertexCount - 1):
+        for i in range(0, vertexCount - 1):
             ud = self.u[i + 1] - self.u[i]
             f.write(
                 packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(ud)))
@@ -604,7 +600,7 @@ class TerrainTile(object):
             packEntry(
                 TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.v[0]))
         )
-        for i in xrange(0, vertexCount - 1):
+        for i in range(0, vertexCount - 1):
             vd = self.v[i + 1] - self.v[i]
             f.write(
                 packEntry(TerrainTile.vertexData['vVertexCount'], zigZagEncode(vd)))
@@ -612,7 +608,7 @@ class TerrainTile(object):
             packEntry(
                 TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.h[0]))
         )
-        for i in xrange(0, vertexCount - 1):
+        for i in range(0, vertexCount - 1):
             hd = self.h[i + 1] - self.h[i]
             f.write(
                 packEntry(
@@ -624,8 +620,7 @@ class TerrainTile(object):
         if vertexCount > TerrainTile.BYTESPLIT:
             meta = TerrainTile.indexData32
 
-        f.write(packEntry(meta['triangleCount'],
-                          old_div(len(self.indices), 3)))
+        f.write(packEntry(meta['triangleCount'], len(self.indices) // 3))
         ind = encodeIndices(self.indices)
         packIndices(f, meta['indices'], ind)
 
@@ -659,7 +654,7 @@ class TerrainTile(object):
             f.write(packEntry(meta['extensionLength'], 2 * vertexCount))
 
             metaV = TerrainTile.OctEncodedVertexNormals
-            for i in xrange(0, vertexCount):
+            for i in range(0, vertexCount):
                 x, y = octEncode(self.vLight[i])
                 f.write(packEntry(metaV['xy'], x))
                 f.write(packEntry(metaV['xy'], y))
@@ -679,7 +674,7 @@ class TerrainTile(object):
                         'Unexpected number of rows for the watermask: %s' % nbRows
                     )
                 # From North to South
-                for i in xrange(0, nbRows):
+                for i in range(0, nbRows):
                     x = self.watermask[i]
                     if len(x) != 256:
                         raise Exception(
@@ -783,9 +778,9 @@ class TerrainTile(object):
                 self.header[k] = occlusionPCoords[2]
 
         # High watermark encoding performed during toFile
-        self.u = list(map(self._quantizeLongitude, topology.uVertex))
-        self.v = list(map(self._quantizeLatitude, topology.vVertex))
-        self.h = list(map(self._quantizeHeight, topology.hVertex))
+        self.u = [self._quantizeLongitude(longitude) for longitude in topology.uVertex]
+        self.v = [self._quantizeLatitude(latitude) for latitude in topology.vVertex]
+        self.h = [self._quantizeHeight(height) for height in topology.hVertex]
         self.indices = topology.indexData
 
         # List all the vertices on the edge of the tile

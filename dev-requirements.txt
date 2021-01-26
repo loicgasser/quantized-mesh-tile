@@ -1,6 +1,6 @@
 coveralls
 flake8
-future
+isort
 mock==1.0.1
 nose
 sphinx

@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, division
-
 import math
-from builtins import map
 
 import numpy as np
-from past.utils import old_div
 
 from . import cartesian3d as c3d
 from . import llh_ecef as ecef
 
 # Constants taken from http://cesiumjs.org/2013/04/25/Horizon-culling/
-rX = old_div(1.0, ecef.radiusX)
-rY = old_div(1.0, ecef.radiusY)
-rZ = old_div(1.0, ecef.radiusZ)
+rX = 1.0 / ecef.radiusX
+rY = 1.0 / ecef.radiusY
+rZ = 1.0 / ecef.radiusZ
 
 # Functions assumes ellipsoid scaled coordinates
 
@@ -22,16 +18,16 @@ rZ = old_div(1.0, ecef.radiusZ)
 def computeMagnitude(point, sphereCenter):
     magnitudeSquared = c3d.magnitudeSquared(point)
     magnitude = math.sqrt(magnitudeSquared)
-    direction = c3d.multiplyByScalar(point, old_div(1, magnitude))
+    direction = c3d.multiplyByScalar(point, 1 / magnitude)
 
     magnitudeSquared = max(1.0, magnitudeSquared)
     magnitude = max(1.0, magnitude)
 
     cosAlpha = np.dot(direction, sphereCenter)
     sinAlpha = c3d.magnitude(np.cross(direction, sphereCenter))
-    cosBeta = old_div(1.0, magnitude)
+    cosBeta = 1.0 / magnitude
     sinBeta = math.sqrt(magnitudeSquared - 1.0) * cosBeta
-    return old_div(1.0, (cosAlpha * cosBeta - sinAlpha * sinBeta))
+    return 1.0 / (cosAlpha * cosBeta - sinAlpha * sinBeta)
 
 
 # https://cesiumjs.org/2013/05/09/Computing-the-horizon-occlusion-point/
@@ -43,11 +39,11 @@ def fromPoints(points, boundingSphere):
     # Bring coordinates to ellipsoid scaled coordinates
     def scaleDown(coord):
         return [coord[0] * rX, coord[1] * rY, coord[2] * rZ]
-    scaledPoints = list(map(scaleDown, points))
+    scaledPoints = [scaleDown(coord) for coord in points]
     scaledSphereCenter = scaleDown(boundingSphere.center)
 
     def magnitude(coord):
         return computeMagnitude(coord, scaledSphereCenter)
-    magnitudes = list(map(magnitude, scaledPoints))
+    magnitudes = [magnitude(coord) for coord in scaledPoints]
 
     return c3d.multiplyByScalar(scaledSphereCenter, max(magnitudes))

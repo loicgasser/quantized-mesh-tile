@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags:
+      - "*"
+  pull_request:
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python-dev libgeos-dev
+          pip install -U pip setuptools
+          pip install -r dev-requirements.txt
+
+      - name: Lint
+        run: flake8
+
+      - name: Isort
+        run: isort --check-only --diff .
+
+      - name: Test
+        run: coverage run --source=quantized_mesh_tile setup.py test
+
+      - name: Coveralls
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          github-token: ${{ secrets.github_token }}
+          flag-name: run-${{ matrix.python-version }}
+          parallel: true
+
+  coveralls:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          github-token: ${{ secrets.github_token }}
+          parallel-finished: true

@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, division
-
 import gzip
 import io
 import math
 from struct import calcsize, pack, unpack
 
 import numpy as np
-from future import standard_library
-from past.builtins import xrange
-from past.utils import old_div
 
 from . import cartesian3d as c3d
-
-standard_library.install_aliases()
 
 EPSILON6 = 0.000001
 
@@ -94,8 +87,8 @@ def octEncode(vec):
         raise ValueError('Only normalized vectors are supported')
     res = [0.0, 0.0]
     l1Norm = float(abs(vec[0]) + abs(vec[1]) + abs(vec[2]))
-    res[0] = old_div(vec[0], l1Norm)
-    res[1] = old_div(vec[1], l1Norm)
+    res[0] = vec[0] / l1Norm
+    res[1] = vec[1] / l1Norm
 
     if vec[2] < 0.0:
         x = res[0]
@@ -124,9 +117,9 @@ def octDecode(x, y):
 
 
 def centroid(a, b, c):
-    return [old_div(sum((a[0], b[0], c[0])), 3),
-            old_div(sum((a[1], b[1], c[1])), 3),
-            old_div(sum([a[2], b[2], c[2]]), 3)]
+    return [sum((a[0], b[0], c[0])) / 3,
+            sum((a[1], b[1], c[1])) / 3,
+            sum([a[2], b[2], c[2]]) / 3]
 
 
 # Based on the vectors defining the plan
@@ -148,7 +141,7 @@ def computeNormals(vertices, faces):
     areasPerFace = [0.0] * numFaces
     normalsPerVertex = np.zeros(vertices.shape, dtype=vertices.dtype)
 
-    for i in xrange(0, numFaces):
+    for i in range(0, numFaces):
         face = faces[i]
         v0 = vertices[face[0]]
         v1 = vertices[face[1]]
@@ -160,13 +153,13 @@ def computeNormals(vertices, faces):
         areasPerFace[i] = area
         normalsPerFace[i] = normal
 
-    for i in xrange(0, numFaces):
+    for i in range(0, numFaces):
         face = faces[i]
         weightedNormal = [c * areasPerFace[i] for c in normalsPerFace[i]]
         for j in face:
             normalsPerVertex[j] = c3d.add(normalsPerVertex[j], weightedNormal)
 
-    for i in xrange(0, numVertices):
+    for i in range(0, numVertices):
         normalsPerVertex[i] = c3d.normalize(normalsPerVertex[i])
 
     return normalsPerVertex
@@ -192,10 +185,10 @@ def getCoordsIndex(n, i):
 
 
 # Creates all the potential pairs of coords
-def createCoordsPairs(l):
+def createCoordsPairs(c):
     coordsPairs = []
-    for i in xrange(0, len(l)):
-        coordsPairs.append([l[i], l[(i + 2) % len(l)]])
+    for i in range(0, len(c)):
+        coordsPairs.append([c[i], c[(i + 2) % len(c)]])
     return coordsPairs
 
 
@@ -221,5 +214,5 @@ def collapseIntoTriangles(coords):
         # As this point is not available to create a new triangle anymore
         convergingPoint = coords.index(coords[i])
         coords.pop(convergingPoint)
-
-    return triangles + [coords]
+    triangles.append(coords)
+    return triangles

@@ -15,12 +15,7 @@ TMS has coordinate origin (for pixels and tiles) in bottom-left corner.
 Reference
 ---------
 """
-from __future__ import division
-
 import math
-from builtins import object, range
-
-from past.utils import old_div
 
 MAXZOOMLEVEL = 32
 
@@ -46,27 +41,27 @@ class GlobalGeodetic(object):
     def __init__(self, tmscompatible, tileSize=256):
         self.tileSize = tileSize
         if tmscompatible is not None:
-            self.resFact = old_div(180.0, self.tileSize)
+            self.resFact = 180.0 / self.tileSize
             self._numberOfLevelZeroTilesX = 2
             self._numberOfLevelZeroTilesY = 1
         else:
-            self.resFact = old_div(360.0, self.tileSize)
+            self.resFact = 360.0 / self.tileSize
             self._numberOfLevelZeroTilesX = 1
             self._numberOfLevelZeroTilesY = 1
 
     def LonLatToPixels(self, lon, lat, zoom):
         "Converts lon/lat to pixel coordinates in given zoom of the EPSG:4326 pyramid"
 
-        res = old_div(self.resFact, 2 ** zoom)
-        px = old_div((180 + lon), res)
-        py = old_div((90 + lat), res)
+        res = self.resFact / 2 ** zoom
+        px = (180 + lon) / res
+        py = (90 + lat) / res
         return px, py
 
     def PixelsToTile(self, px, py):
         "Returns coordinates of the tile covering region in pixel coordinates"
 
-        tx = int(math.ceil(old_div(px, float(self.tileSize))) - 1) if px > 0 else 0
-        ty = int(math.ceil(old_div(py, float(self.tileSize))) - 1) if py > 0 else 0
+        tx = int(math.ceil(px / float(self.tileSize)) - 1) if px > 0 else 0
+        ty = int(math.ceil(py / float(self.tileSize)) - 1) if py > 0 else 0
         return tx, ty
 
     def LonLatToTile(self, lon, lat, zoom):
@@ -78,7 +73,7 @@ class GlobalGeodetic(object):
     def Resolution(self, zoom):
         "Resolution (arc/pixel) for given zoom level (measured at Equator)"
 
-        return old_div(self.resFact, 2 ** zoom)
+        return self.resFact / 2 ** zoom
         # return 180 / float( 1 << (8+zoom) )
 
     def ZoomForPixelSize(self, pixelSize):
@@ -93,7 +88,7 @@ class GlobalGeodetic(object):
 
     def TileBounds(self, tx, ty, zoom):
         "Returns bounds of the given tile"
-        res = old_div(self.resFact, 2 ** zoom)
+        res = self.resFact / 2 ** zoom
         return (
             tx * self.tileSize * res - 180,
             ty * self.tileSize * res - 90,

@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-
 import math
-
-from past.utils import old_div
 
 
 def magnitudeSquared(p):
@@ -37,4 +33,4 @@ def multiplyByScalar(p, scalar):
 
 def normalize(p):
     mgn = magnitude(p)
-    return [old_div(p[0], mgn), old_div(p[1], mgn), old_div(p[2], mgn)]
+    return [p[0] / mgn, p[1] / mgn, p[2] / mgn]

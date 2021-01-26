@@ -9,3 +9,4 @@ doc/build/
 .idea/
 .coverage
 .vscode
+.eggs

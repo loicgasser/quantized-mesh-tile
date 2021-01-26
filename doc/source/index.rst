@@ -17,7 +17,7 @@ Reference Documentation
 Requirements
 ------------
 
-Quantized mesh tile requires Python >=2.7 (not including Python 3.x) and GEOS >= 3.3.
+Quantized mesh tile requires Python >= 3.5 and GEOS >= 3.3.
 
 Installation
 ------------

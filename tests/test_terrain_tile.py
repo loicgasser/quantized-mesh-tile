@@ -3,15 +3,10 @@
 import io
 import os
 import unittest
-from builtins import range
-
-from future import standard_library
 
 from quantized_mesh_tile.global_geodetic import GlobalGeodetic
 from quantized_mesh_tile.terrain import TerrainTile
 from quantized_mesh_tile.topology import TerrainTopology
-
-standard_library.install_aliases()
 
 
 class TestTerrainTile(unittest.TestCase):
