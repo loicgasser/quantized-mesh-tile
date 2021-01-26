@@ -3,14 +3,10 @@
 Reference
 ---------
 """
-from __future__ import division
 
 import math
-from builtins import object
 
 import numpy as np
-from past.utils import old_div
-
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb
@@ -107,7 +103,7 @@ class TerrainTopology(object):
         msg += '\n%s' % len(self.indexData)
         msg += '\nindexData list:'
         msg += '\n%s' % self.indexData
-        msg += '\nNumber of triangles: %s' % (old_div(len(self.indexData), 3))
+        msg += '\nNumber of triangles: %s' % (len(self.indexData) / 3)
         return msg
 
     def addGeometries(self, geometries):
@@ -239,8 +235,8 @@ class TerrainTopology(object):
         http://stackoverflow.com/questions/1709283/\
         how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
         """
-        mlat = old_div(sum(coord[0] for coord in vertices), float(len(vertices)))
-        mlon = old_div(sum(coord[1] for coord in vertices), float(len(vertices)))
+        mlat = sum(coord[0] for coord in vertices) / float(len(vertices))
+        mlon = sum(coord[1] for coord in vertices) / float(len(vertices))
 
         def algo(coord):
             return (math.atan2(coord[0] - mlat, coord[1] - mlon) + 2 * math.pi) % (

@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, division
-
 import math
-from builtins import map, object
-
-from past.builtins import xrange
-from past.utils import old_div
 
 from . import cartesian3d as c3d
 
@@ -15,8 +9,9 @@ class BoundingSphere(object):
     def __init__(self, *args, **kwargs):
         MAX = float('infinity')
         MIN = float('-infinity')
-        self.center = list(map(float, kwargs.get('center', [])))
-        self.radius = float(kwargs.get('radius', 0))
+
+        self.center = kwargs.get('center', [])
+        self.radius = kwargs.get('radius', 0)
         self.minPointX = [MAX, MAX, MAX]
         self.minPointY = [MAX, MAX, MAX]
         self.minPointZ = [MAX, MAX, MAX]
@@ -31,7 +26,7 @@ class BoundingSphere(object):
         if nbPositions < 2:
             raise Exception('Your list of points must contain at least 2 points')
 
-        for i in xrange(0, nbPositions):
+        for i in range(0, nbPositions):
             point = points[i]
 
             # Store the points containing the smallest and largest component
@@ -86,7 +81,7 @@ class BoundingSphere(object):
         naiveCenter = c3d.multiplyByScalar(c3d.add(minBoxPt, maxBoxPt), 0.5)
         naiveRadius = 0.0
 
-        for i in xrange(0, nbPositions):
+        for i in range(0, nbPositions):
             currentP = points[i]
 
             # Find the furthest point from the naive center to calculate the naive radius.
@@ -104,12 +99,12 @@ class BoundingSphere(object):
                 # Calculate center of new Ritter sphere
                 oldToNew = oldCenterToPoint - ritterRadius
                 ritterCenter = [
-                    old_div((ritterRadius * ritterCenter[0] + oldToNew * currentP[0]),
-                            oldCenterToPoint),
-                    old_div((ritterRadius * ritterCenter[1] + oldToNew * currentP[1]),
-                            oldCenterToPoint),
-                    old_div((ritterRadius * ritterCenter[2] + oldToNew * currentP[2]),
-                            oldCenterToPoint)
+                    (ritterRadius * ritterCenter[0] +
+                     oldToNew * currentP[0]) / oldCenterToPoint,
+                    (ritterRadius * ritterCenter[1] +
+                     oldToNew * currentP[1]) / oldCenterToPoint,
+                    (ritterRadius * ritterCenter[2] +
+                     oldToNew * currentP[2]) / oldCenterToPoint
                 ]
 
         # Keep the naive sphere if smaller
