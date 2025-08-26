@@ -5,19 +5,17 @@ Reference
 ---------
 """
 
-# Enable Shapely "speedups" if available
-# http://toblerity.org/shapely/manual.html#performance
-from shapely import speedups
-
 from .terrain import TerrainTile
 from .topology import TerrainTopology
 
-if speedups.available:
-    speedups.enable()
 
-
-def encode(geometries, bounds=[], autocorrectGeometries=False, hasLighting=False,
-           watermask=[]):
+def encode(
+    geometries,
+    bounds=None,
+    autocorrectGeometries=False,
+    hasLighting=False,
+    watermask=None,
+):
     """
     Function to convert geometries into a
     :class:`quantized_mesh_tile.terrain.TerrainTile` instance.
@@ -65,14 +63,26 @@ def encode(geometries, bounds=[], autocorrectGeometries=False, hasLighting=False
         Default is `[]`.
 
     """
-    topology = TerrainTopology(geometries=geometries,
-                               autocorrectGeometries=autocorrectGeometries,
-                               hasLighting=hasLighting)
+    if bounds is None:
+        bounds = []
+    if watermask is None:
+        watermask = []
+
+    topology = TerrainTopology(
+        geometries=geometries,
+        autocorrectGeometries=autocorrectGeometries,
+        hasLighting=hasLighting,
+    )
     if len(bounds) == 4:
         west, south, east, north = bounds
-        tile = TerrainTile(topology=topology,
-                           watermask=watermask,
-                           west=west, south=south, east=east, north=north)
+        tile = TerrainTile(
+            topology=topology,
+            watermask=watermask,
+            west=west,
+            south=south,
+            east=east,
+            north=north,
+        )
     else:
         tile = TerrainTile(topology=topology, watermask=watermask)
     return tile
@@ -109,5 +119,6 @@ def decode(filePath, bounds, hasLighting=False, hasWatermask=False, gzipped=Fals
     west, south, east, north = bounds
     tile = TerrainTile(west=west, south=south, east=east, north=north)
     tile.fromFile(
-        filePath, hasLighting=hasLighting, hasWatermask=hasWatermask, gzipped=gzipped)
+        filePath, hasLighting=hasLighting, hasWatermask=hasWatermask, gzipped=gzipped
+    )
     return tile

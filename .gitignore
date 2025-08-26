@@ -10,3 +10,5 @@ doc/build/
 .coverage
 .vscode
 .eggs
+.ruff_cache
+.pytest_cache

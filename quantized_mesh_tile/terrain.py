@@ -1,4 +1,4 @@
-""" This module defines the :class:`quantized_mesh_tile.terrain.TerrainTile`.
+"""This module defines the :class:`quantized_mesh_tile.terrain.TerrainTile`.
 More information about the format specification can be found here:
 https://github.com/AnalyticalGraphicsInc/quantized-mesh
 
@@ -9,14 +9,30 @@ Reference
 import gzip
 import io
 import os
+import struct
+import warnings
 from collections import OrderedDict
+
+import numpy as np
+
+from quantized_mesh_tile.exceptions import TerrainTileError
 
 from . import horizon_occlusion_point as occ
 from .bbsphere import BoundingSphere
 from .topology import TerrainTopology
-from .utils import (decodeIndices, encodeIndices, gzipFileObject, octDecode,
-                    octEncode, packEntry, packIndices, ungzipFileObject,
-                    unpackEntry, zigZagDecode, zigZagEncode)
+from .utils import (
+    decodeIndices,
+    encodeIndices,
+    gzipFileObject,
+    octDecode,
+    octEncode,
+    packEntry,
+    packIndices,
+    ungzipFileObject,
+    unpackEntry,
+    zigZagDecode,
+    zigZagEncode,
+)
 
 # For a tile of 256px * 256px
 TILEPXS = 65536
@@ -103,84 +119,81 @@ class TerrainTile(object):
         tile.toFile('mytile.terrain')
 
     """
-    quantizedMeshHeader = OrderedDict([
-        ['centerX', 'd'],  # 8bytes
-        ['centerY', 'd'],
-        ['centerZ', 'd'],
-        ['minimumHeight', 'f'],  # 4bytes
-        ['maximumHeight', 'f'],
-        ['boundingSphereCenterX', 'd'],
-        ['boundingSphereCenterY', 'd'],
-        ['boundingSphereCenterZ', 'd'],
-        ['boundingSphereRadius', 'd'],
-        ['horizonOcclusionPointX', 'd'],
-        ['horizonOcclusionPointY', 'd'],
-        ['horizonOcclusionPointZ', 'd']
-    ])
 
-    vertexData = OrderedDict([
-        # 4bytes -> determines the size of the 3 following arrays
-        ['vertexCount', 'I'],
-        ['uVertexCount', 'H'],  # 2bytes, unsigned short
-        ['vVertexCount', 'H'],
-        ['heightVertexCount', 'H']
-    ])
+    quantizedMeshHeader = OrderedDict(
+        [
+            ["centerX", "d"],  # 8bytes
+            ["centerY", "d"],
+            ["centerZ", "d"],
+            ["minimumHeight", "f"],  # 4bytes
+            ["maximumHeight", "f"],
+            ["boundingSphereCenterX", "d"],
+            ["boundingSphereCenterY", "d"],
+            ["boundingSphereCenterZ", "d"],
+            ["boundingSphereRadius", "d"],
+            ["horizonOcclusionPointX", "d"],
+            ["horizonOcclusionPointY", "d"],
+            ["horizonOcclusionPointZ", "d"],
+        ]
+    )
 
-    indexData16 = OrderedDict([
-        ['triangleCount', 'I'],
-        ['indices', 'H']
-    ])
-    indexData32 = OrderedDict([
-        ['triangleCount', 'I'],
-        ['indices', 'I']
-    ])
+    vertexData = OrderedDict(
+        [
+            # 4bytes -> determines the size of the 3 following arrays
+            ["vertexCount", "I"],
+            ["uVertexCount", "H"],  # 2bytes, unsigned short
+            ["vVertexCount", "H"],
+            ["heightVertexCount", "H"],
+        ]
+    )
 
-    EdgeIndices16 = OrderedDict([
-        ['westVertexCount', 'I'],
-        ['westIndices', 'H'],
-        ['southVertexCount', 'I'],
-        ['southIndices', 'H'],
-        ['eastVertexCount', 'I'],
-        ['eastIndices', 'H'],
-        ['northVertexCount', 'I'],
-        ['northIndices', 'H']
-    ])
-    EdgeIndices32 = OrderedDict([
-        ['westVertexCount', 'I'],
-        ['westIndices', 'I'],
-        ['southVertexCount', 'I'],
-        ['southIndices', 'I'],
-        ['eastVertexCount', 'I'],
-        ['eastIndices', 'I'],
-        ['northVertexCount', 'I'],
-        ['northIndices', 'I']
-    ])
+    indexData16 = OrderedDict([["triangleCount", "I"], ["indices", "H"]])
+    indexData32 = OrderedDict([["triangleCount", "I"], ["indices", "I"]])
 
-    ExtensionHeader = OrderedDict([
-        ['extensionId', 'B'],
-        ['extensionLength', 'I']
-    ])
+    EdgeIndices16 = OrderedDict(
+        [
+            ["westVertexCount", "I"],
+            ["westIndices", "H"],
+            ["southVertexCount", "I"],
+            ["southIndices", "H"],
+            ["eastVertexCount", "I"],
+            ["eastIndices", "H"],
+            ["northVertexCount", "I"],
+            ["northIndices", "H"],
+        ]
+    )
+    EdgeIndices32 = OrderedDict(
+        [
+            ["westVertexCount", "I"],
+            ["westIndices", "I"],
+            ["southVertexCount", "I"],
+            ["southIndices", "I"],
+            ["eastVertexCount", "I"],
+            ["eastIndices", "I"],
+            ["northVertexCount", "I"],
+            ["northIndices", "I"],
+        ]
+    )
 
-    OctEncodedVertexNormals = OrderedDict([
-        ['xy', 'B']
-    ])
+    ExtensionHeader = OrderedDict([["extensionId", "B"], ["extensionLength", "I"]])
 
-    WaterMask = OrderedDict([
-        ['xy', 'B']
-    ])
+    OctEncodedVertexNormals = OrderedDict([["xy", "B"]])
 
-    BYTESPLIT = 65636
+    WaterMask = OrderedDict([["xy", "B"]])
+
+    # 16 bits  = 2^16
+    BYTESPLIT = 65536
 
     # min and max quantized values for indices
     MIN = 0.0
     MAX = 32767.0
 
     # Coordinates are given in lon/lat WSG84
-    def __init__(self, *args, **kwargs):
-        self._west = kwargs.get('west', -1.0)
-        self._east = kwargs.get('east', 1.0)
-        self._south = kwargs.get('south', -1.0)
-        self._north = kwargs.get('north', 1.0)
+    def __init__(self, *_, **kwargs):
+        self._west = kwargs.get("west", -1.0)
+        self._east = kwargs.get("east", 1.0)
+        self._south = kwargs.get("south", -1.0)
+        self._north = kwargs.get("north", 1.0)
         self._longs = []
         self._lats = []
         self._heights = []
@@ -192,8 +205,8 @@ class TerrainTile(object):
 
         # Extensions
         self.vLight = []
-        self.watermask = kwargs.get('watermask', [])
-        self.hasWatermask = kwargs.get('hasWatermask', bool(self.watermask))
+        self.watermask = kwargs.get("watermask", [])
+        self.hasWatermask = kwargs.get("hasWatermask", bool(self.watermask))
 
         self.header = OrderedDict()
         for k in TerrainTile.quantizedMeshHeader.keys():
@@ -207,31 +220,31 @@ class TerrainTile(object):
         self.eastI = []
         self.northI = []
 
-        topology = kwargs.get('topology')
+        topology = kwargs.get("topology")
         if topology is not None:
             self.fromTerrainTopology(topology)
 
     def __repr__(self):
-        msg = 'Header: %s\n' % self.header
+        msg = "Header: %s\n" % self.header
         # Output intermediate structure
-        msg += '\nVertexCount: %s' % len(self.u)
-        msg += '\nuVertex: %s' % self.u
-        msg += '\nvVertex: %s' % self.v
-        msg += '\nhVertex: %s' % self.h
-        msg += '\nindexDataCount: %s' % len(self.indices)
-        msg += '\nindexData: %s' % self.indices
-        msg += '\nwestIndicesCount: %s' % len(self.westI)
-        msg += '\nwestIndices: %s' % self.westI
-        msg += '\nsouthIndicesCount: %s' % len(self.southI)
-        msg += '\nsouthIndices: %s' % self.southI
-        msg += '\neastIndicesCount: %s' % len(self.eastI)
-        msg += '\neastIndices: %s' % self.eastI
-        msg += '\nnorthIndicesCount: %s' % len(self.northI)
-        msg += '\nnorthIndices: %s\n' % self.northI
+        msg += "\nVertexCount: %s" % len(self.u)
+        msg += "\nuVertex: %s" % self.u
+        msg += "\nvVertex: %s" % self.v
+        msg += "\nhVertex: %s" % self.h
+        msg += "\nindexDataCount: %s" % len(self.indices)
+        msg += "\nindexData: %s" % self.indices
+        msg += "\nwestIndicesCount: %s" % len(self.westI)
+        msg += "\nwestIndices: %s" % self.westI
+        msg += "\nsouthIndicesCount: %s" % len(self.southI)
+        msg += "\nsouthIndices: %s" % self.southI
+        msg += "\neastIndicesCount: %s" % len(self.eastI)
+        msg += "\neastIndices: %s" % self.eastI
+        msg += "\nnorthIndicesCount: %s" % len(self.northI)
+        msg += "\nnorthIndices: %s\n" % self.northI
         # Output coordinates
-        msg += '\nNumber of triangles: %s' % (len(self.indices) // 3)
-        msg += '\nTriangles coordinates in EPSG %s' % self.EPSG
-        msg += '\n%s' % self.getTrianglesCoordinates()
+        msg += "\nNumber of triangles: %s" % (len(self.indices) // 3)
+        msg += "\nTriangles coordinates in EPSG %s" % self.EPSG
+        msg += "\n%s" % self.getTrianglesCoordinates()
 
         return msg
 
@@ -243,13 +256,13 @@ class TerrainTile(object):
         """
         A method to determine the content type of a tile.
         """
-        baseContent = 'application/vnd.quantized-mesh'
+        baseContent = "application/vnd.quantized-mesh"
         if self.hasLighting and self.hasWatermask:
-            return baseContent + ';extensions=octvertexnormals-watermask'
+            return baseContent + ";extensions=octvertexnormals-watermask"
         elif self.hasLighting:
-            return baseContent + ';extensions=octvertexnormals'
+            return baseContent + ";extensions=octvertexnormals"
         elif self.hasWatermask:
-            return baseContent + ';extensions=watermask'
+            return baseContent + ";extensions=watermask"
         else:
             return baseContent
 
@@ -258,10 +271,10 @@ class TerrainTile(object):
         A method to retrieve the coordinates of the vertices in lon,lat,height.
         """
         self._computeVerticesCoordinates()
-        coordinates = []
-        for i, lon in enumerate(self._longs):
-            coordinates.append((lon, self._lats[i], self._heights[i]))
-        return coordinates
+        return [
+            (lon, lat, height)
+            for lon, lat, height in zip(self._longs, self._lats, self._heights)
+        ]
 
     def getTrianglesCoordinates(self):
         """
@@ -272,21 +285,15 @@ class TerrainTile(object):
         triangles = []
         nbTriangles = len(self.indices)
         if nbTriangles % 3 != 0:
-            raise Exception('Corrupted tile')
+            raise TerrainTileError("Corrupted tile")
         for i in range(0, nbTriangles - 1, 3):
             vi1 = self.indices[i]
             vi2 = self.indices[i + 1]
             vi3 = self.indices[i + 2]
             triangle = (
-                (self._longs[vi1],
-                 self._lats[vi1],
-                 self._heights[vi1]),
-                (self._longs[vi2],
-                 self._lats[vi2],
-                 self._heights[vi2]),
-                (self._longs[vi3],
-                 self._lats[vi3],
-                 self._heights[vi3])
+                (self._longs[vi1], self._lats[vi1], self._heights[vi1]),
+                (self._longs[vi2], self._lats[vi2], self._heights[vi2]),
+                (self._longs[vi3], self._lats[vi3], self._heights[vi3]),
             )
             triangles.append(triangle)
         return triangles
@@ -297,17 +304,15 @@ class TerrainTile(object):
         """
         if not self._longs:
             for u in self.u:
-                self._longs.append(
-                    lerp(self._west, self._east, u / self.MAX))
+                self._longs.append(lerp(self._west, self._east, u / self.MAX))
             for v in self.v:
-                self._lats.append(
-                    lerp(self._south, self._north, v / self.MAX))
+                self._lats.append(lerp(self._south, self._north, v / self.MAX))
             for h in self.h:
                 self._heights.append(
                     lerp(
-                        self.header['minimumHeight'],
-                        self.header['maximumHeight'],
-                        h / self.MAX
+                        self.header["minimumHeight"],
+                        self.header["maximumHeight"],
+                        h / self.MAX,
                     )
                 )
 
@@ -328,7 +333,13 @@ class TerrainTile(object):
         ``hasWatermask``
 
             Indicate if the tile contains watermask information. Default is ``False``.
+
+        Note:
+            Only extension IDs 1 (Oct-Encoded Per-Vertex Normals) and 2 (Water Mask)
+            are supported. If the tile contains other extensions (e.g., Metadata),
+            they will be skipped and a warning will be issued.
         """
+        # pylint: disable=attribute-defined-outside-init
         self.hasLighting = hasLighting
         self.hasWatermask = hasWatermask
         # Header
@@ -336,71 +347,104 @@ class TerrainTile(object):
             self.header[k] = unpackEntry(f, v)
 
         # Vertices
-        vertexCount = unpackEntry(f, TerrainTile.vertexData['vertexCount'])
-        for ud in self._iterUnpackAndDecodeVertices(
-                f, vertexCount, TerrainTile.vertexData['uVertexCount']):
-            self.u.append(ud)
-        for vd in self._iterUnpackAndDecodeVertices(
-                f, vertexCount, TerrainTile.vertexData['vVertexCount']):
-            self.v.append(vd)
-        for hd in self._iterUnpackAndDecodeVertices(
-                f, vertexCount, TerrainTile.vertexData['heightVertexCount']):
-            self.h.append(hd)
+        vertexCount = unpackEntry(f, TerrainTile.vertexData["vertexCount"])
+        uc = TerrainTile.vertexData["uVertexCount"]
+        vc = TerrainTile.vertexData["vVertexCount"]
+        hc = TerrainTile.vertexData["heightVertexCount"]
+
+        self.u = list(self._iterUnpackAndDecodeVertices(f, vertexCount, uc))
+        self.v = list(self._iterUnpackAndDecodeVertices(f, vertexCount, vc))
+        self.h = list(self._iterUnpackAndDecodeVertices(f, vertexCount, hc))
 
         # Indices
         meta = TerrainTile.indexData16
         if vertexCount > TerrainTile.BYTESPLIT:
             meta = TerrainTile.indexData32
-        triangleCount = unpackEntry(f, meta['triangleCount'])
-        ind = [
-            index for index
-            in self._iterUnpackIndices(f, triangleCount * 3, meta['indices'])]
+
+        triangleCount = unpackEntry(f, meta["triangleCount"])
+        ind = list(self._iterUnpackIndices(f, triangleCount * 3, meta["indices"]))
         self.indices = decodeIndices(ind)
 
         meta = TerrainTile.EdgeIndices16
         if vertexCount > TerrainTile.BYTESPLIT:
-            meta = TerrainTile.indexData32
+            meta = TerrainTile.EdgeIndices32
+
         # Edges (vertices on the edge of the tile)
-        westIndicesCount = unpackEntry(f, meta['westVertexCount'])
-        for wi in self._iterUnpackIndices(f, westIndicesCount, meta['westIndices']):
-            self.westI.append(wi)
-
-        southIndicesCount = unpackEntry(f, meta['southVertexCount'])
-        for si in self._iterUnpackIndices(f, southIndicesCount, meta['southIndices']):
-            self.southI.append(si)
-
-        eastIndicesCount = unpackEntry(f, meta['eastVertexCount'])
-        for ei in self._iterUnpackIndices(f, eastIndicesCount, meta['eastIndices']):
-            self.eastI.append(ei)
-
-        northIndicesCount = unpackEntry(f, meta['northVertexCount'])
-        for ni in self._iterUnpackIndices(f, northIndicesCount, meta['northIndices']):
-            self.northI.append(ni)
+        westIndicesCount = unpackEntry(f, meta["westVertexCount"])
+        self.westI = list(
+            self._iterUnpackIndices(f, westIndicesCount, meta["westIndices"])
+        )
+        southIndicesCount = unpackEntry(f, meta["southVertexCount"])
+        self.southI = list(
+            self._iterUnpackIndices(f, southIndicesCount, meta["southIndices"])
+        )
+        eastIndicesCount = unpackEntry(f, meta["eastVertexCount"])
+        self.eastI = list(
+            self._iterUnpackIndices(f, eastIndicesCount, meta["eastIndices"])
+        )
+        northIndicesCount = unpackEntry(f, meta["northVertexCount"])
+        self.northI = list(
+            self._iterUnpackIndices(f, northIndicesCount, meta["northIndices"])
+        )
 
         if self.hasLighting:
             # One byte of padding
             # Light extension header
             meta = TerrainTile.ExtensionHeader
-            extensionId = unpackEntry(f, meta['extensionId'])
+            extensionId = unpackEntry(f, meta["extensionId"])
             if extensionId == 1:
-                extensionLength = unpackEntry(f, meta['extensionLength'])
-
-                for xy in self._iterUnpackAndDecodeLight(
-                        f, extensionLength, TerrainTile.OctEncodedVertexNormals['xy']):
-                    self.vLight.append(xy)
+                extensionLength = unpackEntry(f, meta["extensionLength"])
+                octNorms = TerrainTile.OctEncodedVertexNormals["xy"]
+                self.vLight = list(
+                    self._iterUnpackAndDecodeLight(f, extensionLength, octNorms)
+                )
 
         if self.hasWatermask:
             meta = TerrainTile.ExtensionHeader
-            extensionId = unpackEntry(f, meta['extensionId'])
+            extensionId = unpackEntry(f, meta["extensionId"])
             if extensionId == 2:
-                extensionLength = unpackEntry(f, meta['extensionLength'])
-                for row in self._iterUnpackWatermaskRow(
-                        f, extensionLength, TerrainTile.WaterMask['xy']):
-                    self.watermask.append(row)
+                extensionLength = unpackEntry(f, meta["extensionLength"])
+                maskXY = TerrainTile.WaterMask["xy"]
+                self.watermask = list(
+                    self._iterUnpackWatermaskRow(f, extensionLength, maskXY)
+                )
 
-        data = f.read(1)
-        if data:
-            raise Exception('Should have reached end of file, but didn\'t')
+        # Check for unsupported extensions and skip them with a warning
+        self._skipUnsupportedExtensions(f)
+
+    def _skipUnsupportedExtensions(self, f):
+        """Skip any unsupported extensions at the end of the file with warnings.
+
+        Only extension IDs 1 (Oct-Encoded Per-Vertex Normals) and 2 (Water Mask)
+        are supported. Extensions 3+ (e.g., Metadata) will be skipped with a warning.
+        """
+        meta = TerrainTile.ExtensionHeader
+        while True:
+            data = f.read(1)
+            if not data:
+                # Reached end of file
+                break
+
+            # Put the byte back and try to read extension header
+            f.seek(f.tell() - 1)
+            try:
+                extensionId = unpackEntry(f, meta["extensionId"])
+                extensionLength = unpackEntry(f, meta["extensionLength"])
+
+                # Supported extension IDs: 1=Oct-Encoded Per-Vertex Normals, 2=Water Mask
+                # Unsupported: 3=Metadata, 4+=unknown
+                warnings.warn(
+                    f"Skipping unsupported terrain tile extension "
+                    f"(id={extensionId}, length={extensionLength} bytes). "
+                    f"Only extensions 1 (lighting) and 2 (watermask) are supported.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+                # Skip the extension data
+                f.read(extensionLength)
+            except struct.error:
+                # Could not parse as extension header, stop
+                break
 
     @staticmethod
     def _iterUnpackAndDecodeVertices(f, vertexCount, structType):
@@ -433,12 +477,7 @@ class TerrainTile(object):
         i = 0
         xyCount = extensionLength / 2
         while i != xyCount:
-            yield octDecode(
-                unpackEntry(
-                    f, structType),
-                unpackEntry(
-                    f, structType)
-            )
+            yield octDecode(unpackEntry(f, structType), unpackEntry(f, structType))
             i += 1
 
     @staticmethod
@@ -483,11 +522,10 @@ class TerrainTile(object):
 
             Indicate if the tile content is gzipped. Default is ``False``.
         """
-        with open(filePath, 'rb') as f:
+        with open(filePath, "rb") as f:
             if gzipped:
                 f = ungzipFileObject(f)
-            self.fromBytesIO(f, hasLighting=hasLighting,
-                             hasWatermask=hasWatermask)
+            self.fromBytesIO(f, hasLighting=hasLighting, hasWatermask=hasWatermask)
 
     def toBytesIO(self, gzipped=False):
         """
@@ -520,13 +558,13 @@ class TerrainTile(object):
             Indicate if the content should be gzipped. Default is ``False``.
         """
         if os.path.isfile(filePath):
-            raise IOError('File %s already exists' % filePath)
+            raise IOError("File %s already exists" % filePath)
 
         if not gzipped:
-            with open(filePath, 'wb') as f:
+            with open(filePath, "wb") as f:
                 self._writeTo(f)
         else:
-            with gzip.open(filePath, 'wb') as f:
+            with gzip.open(filePath, "wb") as f:
                 self._writeTo(f)
 
     def _getWorkingUnitLatitude(self):
@@ -541,28 +579,10 @@ class TerrainTile(object):
 
     def _getDeltaHeight(self):
         if not self._deltaHeight:
-            maxHeight = self.header['maximumHeight']
-            minHeight = self.header['minimumHeight']
+            maxHeight = self.header["maximumHeight"]
+            minHeight = self.header["minimumHeight"]
             self._deltaHeight = maxHeight - minHeight
         return self._deltaHeight
-
-    def _quantizeLatitude(self, latitude):
-        return int(round((latitude - self._south) *
-                         self._getWorkingUnitLatitude()))
-
-    def _quantizeLongitude(self, longitude):
-        return int(round((longitude - self._west) *
-                         self._getWorkingUnitLongitude()))
-
-    def _quantizeHeight(self, height):
-        deniv = self._getDeltaHeight()
-        # In case a tile is completely flat
-        if deniv == 0:
-            h = 0
-        else:
-            workingUnitHeight = self.MAX / deniv
-            h = int(round((height - self.header['minimumHeight']) * workingUnitHeight))
-        return h
 
     def _dequantizeHeight(self, h):
         """
@@ -571,125 +591,121 @@ class TerrainTile(object):
         :param h: the quantized height value
         :return: the height in ground units (meter)
         """
-        return lerp(self.header['minimumHeight'],
-                    self.header['maximumHeight'],
-                    h / self.MAX)
+        return lerp(
+            self.header["minimumHeight"], self.header["maximumHeight"], h / self.MAX
+        )
 
     def _writeTo(self, f):
         """
         A private method to write the terrain tile to a file or file-like object.
         """
+        u_t = TerrainTile.vertexData["uVertexCount"]
+        v_t = TerrainTile.vertexData["vVertexCount"]
+        h_t = TerrainTile.vertexData["heightVertexCount"]
+        write = f.write
+
         # Header
         for k, v in TerrainTile.quantizedMeshHeader.items():
-            f.write(packEntry(v, self.header[k]))
+            write(packEntry(v, self.header[k]))
 
         # Delta decoding
         vertexCount = len(self.u)
         # Vertices
-        f.write(packEntry(TerrainTile.vertexData['vertexCount'], vertexCount))
-        # Move the initial value
-        f.write(
-            packEntry(
-                TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.u[0]))
-        )
-        for i in range(0, vertexCount - 1):
-            ud = self.u[i + 1] - self.u[i]
-            f.write(
-                packEntry(TerrainTile.vertexData['uVertexCount'], zigZagEncode(ud)))
-        f.write(
-            packEntry(
-                TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.v[0]))
-        )
-        for i in range(0, vertexCount - 1):
-            vd = self.v[i + 1] - self.v[i]
-            f.write(
-                packEntry(TerrainTile.vertexData['vVertexCount'], zigZagEncode(vd)))
-        f.write(
-            packEntry(
-                TerrainTile.vertexData['uVertexCount'], zigZagEncode(self.h[0]))
-        )
-        for i in range(0, vertexCount - 1):
-            hd = self.h[i + 1] - self.h[i]
-            f.write(
-                packEntry(
-                    TerrainTile.vertexData['heightVertexCount'], zigZagEncode(hd))
-            )
+        write(packEntry(TerrainTile.vertexData["vertexCount"], vertexCount))
+
+        # Pre-compute all deltas using numpy diff
+        u_arr = np.array(self.u, dtype=np.int32)
+        v_arr = np.array(self.v, dtype=np.int32)
+        h_arr = np.array(self.h, dtype=np.int32)
+
+        u_deltas = np.concatenate([[u_arr[0]], np.diff(u_arr)])
+        v_deltas = np.concatenate([[v_arr[0]], np.diff(v_arr)])
+        h_deltas = np.concatenate([[h_arr[0]], np.diff(h_arr)])
+
+        # U
+        for ud in u_deltas:
+            write(packEntry(u_t, zigZagEncode(int(ud))))
+        # V
+        for vd in v_deltas:
+            write(packEntry(v_t, zigZagEncode(int(vd))))
+        # H
+        for hd in h_deltas:
+            write(packEntry(h_t, zigZagEncode(int(hd))))
 
         # Indices
         meta = TerrainTile.indexData16
         if vertexCount > TerrainTile.BYTESPLIT:
             meta = TerrainTile.indexData32
 
-        f.write(packEntry(meta['triangleCount'], len(self.indices) // 3))
+        write(packEntry(meta["triangleCount"], len(self.indices) // 3))
         ind = encodeIndices(self.indices)
-        packIndices(f, meta['indices'], ind)
+        packIndices(f, meta["indices"], ind)
 
         meta = TerrainTile.EdgeIndices16
         if vertexCount > TerrainTile.BYTESPLIT:
             meta = TerrainTile.EdgeIndices32
 
-        f.write(packEntry(meta['westVertexCount'], len(self.westI)))
+        write(packEntry(meta["westVertexCount"], len(self.westI)))
         for wi in self.westI:
-            f.write(packEntry(meta['westIndices'], wi))
+            write(packEntry(meta["westIndices"], wi))
 
-        f.write(packEntry(meta['southVertexCount'], len(self.southI)))
+        write(packEntry(meta["southVertexCount"], len(self.southI)))
         for si in self.southI:
-            f.write(packEntry(meta['southIndices'], si))
+            write(packEntry(meta["southIndices"], si))
 
-        f.write(packEntry(meta['eastVertexCount'], len(self.eastI)))
+        write(packEntry(meta["eastVertexCount"], len(self.eastI)))
         for ei in self.eastI:
-            f.write(packEntry(meta['eastIndices'], ei))
+            write(packEntry(meta["eastIndices"], ei))
 
-        f.write(packEntry(meta['northVertexCount'], len(self.northI)))
+        write(packEntry(meta["northVertexCount"], len(self.northI)))
         for ni in self.northI:
-            f.write(packEntry(meta['northIndices'], ni))
+            write(packEntry(meta["northIndices"], ni))
 
         # Extension header for light
         if len(self.vLight) > 0:
+            # pylint: disable=attribute-defined-outside-init
             self.hasLighting = True
             meta = TerrainTile.ExtensionHeader
             # Extension header ID is 1 for lightening
-            f.write(packEntry(meta['extensionId'], 1))
+            write(packEntry(meta["extensionId"], 1))
             # Unsigned char size len is 1
-            f.write(packEntry(meta['extensionLength'], 2 * vertexCount))
+            write(packEntry(meta["extensionLength"], 2 * vertexCount))
 
             metaV = TerrainTile.OctEncodedVertexNormals
             for i in range(0, vertexCount):
                 x, y = octEncode(self.vLight[i])
-                f.write(packEntry(metaV['xy'], x))
-                f.write(packEntry(metaV['xy'], y))
+                write(packEntry(metaV["xy"], x))
+                write(packEntry(metaV["xy"], y))
 
         if self.watermask:
             self.hasWatermask = True
             # Extension header ID is 2 for watermark
             meta = TerrainTile.ExtensionHeader
-            f.write(packEntry(meta['extensionId'], 2))
+            write(packEntry(meta["extensionId"], 2))
             # Extension header meta
             nbRows = len(self.watermask)
             if nbRows > 1:
                 # Unsigned char size len is 1
-                f.write(packEntry(meta['extensionLength'], TILEPXS))
+                write(packEntry(meta["extensionLength"], TILEPXS))
                 if nbRows != 256:
-                    raise Exception(
-                        'Unexpected number of rows for the watermask: %s' % nbRows
+                    raise TerrainTileError(
+                        "Unexpected number of rows for the watermask: %s" % nbRows
                     )
                 # From North to South
                 for i in range(0, nbRows):
                     x = self.watermask[i]
                     if len(x) != 256:
-                        raise Exception(
-                            'Unexpected number of columns for the watermask: %s' % len(
-                                x)
+                        raise TerrainTileError(
+                            "Unexpected number of columns for the watermask: %s" % len(x)
                         )
                     # From West to East
                     for y in x:
-                        f.write(packEntry(TerrainTile.WaterMask['xy'], int(y)))
+                        write(packEntry(TerrainTile.WaterMask["xy"], int(y)))
             else:
-                f.write(packEntry(meta['extensionLength'], 1))
+                write(packEntry(meta["extensionLength"], 1))
                 if self.watermask[0][0] is None:
                     self.watermask[0][0] = 0
-                f.write(
-                    packEntry(TerrainTile.WaterMask['xy'], int(self.watermask[0][0])))
+                write(packEntry(TerrainTile.WaterMask["xy"], int(self.watermask[0][0])))
 
     def fromTerrainTopology(self, topology, bounds=None):
         """
@@ -711,8 +727,9 @@ class TerrainTile(object):
 
         """
         if not isinstance(topology, TerrainTopology):
-            raise Exception(
-                'topology object must be an instance of TerrainTopology')
+            raise TerrainTileError(
+                "topology object must be an instance of TerrainTopology"
+            )
 
         # If the bounds are not provided use
         # topology extent instead
@@ -722,7 +739,8 @@ class TerrainTile(object):
             self._south = bounds[1]
             self._north = bounds[3]
         elif set([self._west, self._south, self._east, self._north]).difference(
-                set([-1.0, -1.0, 1.0, 1.0])):
+            set([-1.0, -1.0, 1.0, 1.0])
+        ):
             # Bounds already defined earlier
             pass
         else:
@@ -746,58 +764,86 @@ class TerrainTile(object):
         centerCoords = [
             ecefMinX + (ecefMaxX - ecefMinX) * 0.5,
             ecefMinY + (ecefMaxY - ecefMinY) * 0.5,
-            ecefMinZ + (ecefMaxZ - ecefMinZ) * 0.5
+            ecefMinZ + (ecefMaxZ - ecefMinZ) * 0.5,
         ]
 
         occlusionPCoords = occ.fromPoints(topology.cartesianVertices, bSphere)
 
         for k in TerrainTile.quantizedMeshHeader.keys():
-            if k == 'centerX':
+            if k == "centerX":
                 self.header[k] = centerCoords[0]
-            elif k == 'centerY':
+            elif k == "centerY":
                 self.header[k] = centerCoords[1]
-            elif k == 'centerZ':
+            elif k == "centerZ":
                 self.header[k] = centerCoords[2]
-            elif k == 'minimumHeight':
+            elif k == "minimumHeight":
                 self.header[k] = topology.minHeight
-            elif k == 'maximumHeight':
+            elif k == "maximumHeight":
                 self.header[k] = topology.maxHeight
-            elif k == 'boundingSphereCenterX':
+            elif k == "boundingSphereCenterX":
                 self.header[k] = bSphere.center[0]
-            elif k == 'boundingSphereCenterY':
+            elif k == "boundingSphereCenterY":
                 self.header[k] = bSphere.center[1]
-            elif k == 'boundingSphereCenterZ':
+            elif k == "boundingSphereCenterZ":
                 self.header[k] = bSphere.center[2]
-            elif k == 'boundingSphereRadius':
+            elif k == "boundingSphereRadius":
                 self.header[k] = bSphere.radius
-            elif k == 'horizonOcclusionPointX':
+            elif k == "horizonOcclusionPointX":
                 self.header[k] = occlusionPCoords[0]
-            elif k == 'horizonOcclusionPointY':
+            elif k == "horizonOcclusionPointY":
                 self.header[k] = occlusionPCoords[1]
-            elif k == 'horizonOcclusionPointZ':
+            elif k == "horizonOcclusionPointZ":
                 self.header[k] = occlusionPCoords[2]
 
         # High watermark encoding performed during toFile
-        self.u = [self._quantizeLongitude(longitude) for longitude in topology.uVertex]
-        self.v = [self._quantizeLatitude(latitude) for latitude in topology.vVertex]
-        self.h = [self._quantizeHeight(height) for height in topology.hVertex]
+        # Vectorized quantization using numpy
+        u_arr = np.asarray(topology.uVertex)
+        v_arr = np.asarray(topology.vVertex)
+        h_arr = np.asarray(topology.hVertex)
+
+        self.u = np.round(
+            (u_arr - self._west) * self._getWorkingUnitLongitude()
+        ).astype(int).tolist()
+        self.v = np.round(
+            (v_arr - self._south) * self._getWorkingUnitLatitude()
+        ).astype(int).tolist()
+
+        deniv = self._getDeltaHeight()
+        if deniv == 0:
+            self.h = [0] * len(h_arr)
+        else:
+            self.h = np.round(
+                (h_arr - self.header["minimumHeight"]) * (self.MAX / deniv)
+            ).astype(int).tolist()
+
         self.indices = topology.indexData
 
         # List all the vertices on the edge of the tile
         # Use quantized values to determine if an indice belong to a tile edge
+        # Use dicts for O(1) lookup while preserving insertion order (Python 3.7+)
+        westI_seen = {}
+        eastI_seen = {}
+        southI_seen = {}
+        northI_seen = {}
+
         for indice in self.indices:
             x = self.u[indice]
             y = self.v[indice]
 
-            if x == self.MIN and indice not in self.westI:
-                self.westI.append(indice)
-            elif x == self.MAX and indice not in self.eastI:
-                self.eastI.append(indice)
+            if x == self.MIN:
+                westI_seen[indice] = None
+            elif x == self.MAX:
+                eastI_seen[indice] = None
 
-            if y == self.MIN and indice not in self.southI:
-                self.southI.append(indice)
-            elif y == self.MAX and indice not in self.northI:
-                self.northI.append(indice)
+            if y == self.MIN:
+                southI_seen[indice] = None
+            elif y == self.MAX:
+                northI_seen[indice] = None
+
+        self.westI = list(westI_seen)
+        self.eastI = list(eastI_seen)
+        self.southI = list(southI_seen)
+        self.northI = list(northI_seen)
 
         self.hasLighting = topology.hasLighting
         if self.hasLighting:

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=40.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantized-mesh-tile"
+version = "0.7.0"
+description = "Quantized-Mesh format reader and writer"
+readme = "README.md"
+authors = [{ name = "Loïc Gasser", email = "loicgasser4@gmail.com" }]
+license = { text = "MIT" }
+classifiers = [
+  "Development Status :: Beta",
+  "Environment :: Plugins",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Scientific/Engineering :: GIS",
+]
+requires-python = ">=3.9,<4.0"
+dependencies = ["numpy>=2.0.0", "shapely>=2.0.0"]
+
+[project.optional-dependencies]
+dev = [
+  "coveralls",
+  "mock",
+  "pylint",
+  "sphinx",
+  "sphinx_rtd_theme",
+  "sphinx-autobuild",
+  "ruff",
+  "pytest",
+  "pytest-cov",
+]
+
+[tool.ruff]
+src = ["quantized_mesh_tile", "tests"]
+exclude = [
+  ".egg",
+  ".git",
+  ".tox",
+  ".venv",
+  "venv",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "migrations",
+]
+line-length = 90
+
+[tool.pylint.messages_control]
+# W0511: Used when a warning note as FIXME or XXX is detected.
+disable = ['C', 'R', 'W0511']
