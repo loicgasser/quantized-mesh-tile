@@ -1,7 +1,7 @@
 quantized-mesh-tile
 ===================
 
-![Build Status](https://github.com/loicgasser/quantized-mesh-tile/workflows/CI/badge.svg?branch=master)
+[![CI](https://github.com/loicgasser/quantized-mesh-tile/actions/workflows/main.yml/badge.svg)](https://github.com/loicgasser/quantized-mesh-tile/actions/workflows/main.yml)
 [![Coverage Status](https://coveralls.io/repos/github/loicgasser/quantized-mesh-tile/badge.svg?branch=master)](https://coveralls.io/github/loicgasser/quantized-mesh-tile?branch=master)
 [![Doc Status](https://readthedocs.org/projects/quantized-mesh-tile/badge/?version=latest)](http://quantized-mesh-tile.readthedocs.io/en/latest/?badge=latest)
 
