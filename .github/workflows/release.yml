@@ -4,6 +4,8 @@ on:
   ## when a release is published (not drafts)
   release:
     types: [published]
+  ## allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
 
 # Permission can be added at job level or workflow level
 permissions:
