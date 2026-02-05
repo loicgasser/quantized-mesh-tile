@@ -4,6 +4,8 @@ import math
 
 import numpy as np
 
+from quantized_mesh_tile.exceptions import InvalidGeometryError
+
 from . import cartesian3d as c3d
 from . import llh_ecef as ecef
 
@@ -32,18 +34,19 @@ def computeMagnitude(point, sphereCenter):
 
 # https://cesiumjs.org/2013/05/09/Computing-the-horizon-occlusion-point/
 def fromPoints(points, boundingSphere):
-
     if len(points) < 1:
-        raise Exception('Your list of points must contain at least 2 points')
+        raise InvalidGeometryError("Your list of points must contain at least 2 points")
 
     # Bring coordinates to ellipsoid scaled coordinates
     def scaleDown(coord):
         return [coord[0] * rX, coord[1] * rY, coord[2] * rZ]
+
     scaledPoints = [scaleDown(coord) for coord in points]
     scaledSphereCenter = scaleDown(boundingSphere.center)
 
     def magnitude(coord):
         return computeMagnitude(coord, scaledSphereCenter)
+
     magnitudes = [magnitude(coord) for coord in scaledPoints]
 
     return c3d.multiplyByScalar(scaledSphereCenter, max(magnitudes))

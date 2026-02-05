@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 
 import math
+from typing import List
+
+from quantized_mesh_tile.exceptions import TerrainTileError
 
 from . import cartesian3d as c3d
 
 
 class BoundingSphere(object):
-    def __init__(self, *args, **kwargs):
-        MAX = float('infinity')
-        MIN = float('-infinity')
+    def __init__(self, *_, **kwargs):
+        MAX = float("infinity")
+        MIN = float("-infinity")
 
-        self.center = kwargs.get('center', [])
-        self.radius = kwargs.get('radius', 0)
+        self.center = kwargs.get("center", [])
+        self.radius = kwargs.get("radius", 0)
         self.minPointX = [MAX, MAX, MAX]
         self.minPointY = [MAX, MAX, MAX]
         self.minPointZ = [MAX, MAX, MAX]
@@ -20,11 +23,10 @@ class BoundingSphere(object):
         self.maxPointZ = [MIN, MIN, MIN]
 
     # Based on Ritter's algorithm
-    def fromPoints(self, points):
-
+    def fromPoints(self, points: List):
         nbPositions = len(points)
         if nbPositions < 2:
-            raise Exception('Your list of points must contain at least 2 points')
+            raise TerrainTileError("Your list of points must contain at least 2 points")
 
         for i in range(0, nbPositions):
             point = points[i]
@@ -69,7 +71,7 @@ class BoundingSphere(object):
         ritterCenter = [
             (diameter1[0] + diameter2[0]) * 0.5,
             (diameter1[1] + diameter2[1]) * 0.5,
-            (diameter1[2] + diameter2[2]) * 0.5
+            (diameter1[2] + diameter2[2]) * 0.5,
         ]
 
         radiusSquared = c3d.magnitudeSquared(c3d.subtract(diameter2, ritterCenter))
@@ -99,12 +101,12 @@ class BoundingSphere(object):
                 # Calculate center of new Ritter sphere
                 oldToNew = oldCenterToPoint - ritterRadius
                 ritterCenter = [
-                    (ritterRadius * ritterCenter[0] +
-                     oldToNew * currentP[0]) / oldCenterToPoint,
-                    (ritterRadius * ritterCenter[1] +
-                     oldToNew * currentP[1]) / oldCenterToPoint,
-                    (ritterRadius * ritterCenter[2] +
-                     oldToNew * currentP[2]) / oldCenterToPoint
+                    (ritterRadius * ritterCenter[0] + oldToNew * currentP[0])
+                    / oldCenterToPoint,
+                    (ritterRadius * ritterCenter[1] + oldToNew * currentP[1])
+                    / oldCenterToPoint,
+                    (ritterRadius * ritterCenter[2] + oldToNew * currentP[2])
+                    / oldCenterToPoint,
                 ]
 
         # Keep the naive sphere if smaller

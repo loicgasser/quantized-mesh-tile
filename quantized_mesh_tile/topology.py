@@ -1,4 +1,4 @@
-""" This module defines the :class:`quantized_mesh_tile.topology.TerrainTopology`.
+"""This module defines the :class:`quantized_mesh_tile.topology.TerrainTopology`.
 
 Reference
 ---------
@@ -11,6 +11,8 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.wkb import loads as load_wkb
 from shapely.wkt import loads as load_wkt
+
+from quantized_mesh_tile.exceptions import InvalidGeometryError, MissingDimensionError
 
 from .llh_ecef import LLH2ECEF
 from .utils import collapseIntoTriangles, computeNormals
@@ -68,9 +70,8 @@ class TerrainTopology(object):
 
     """
 
-    def __init__(self, geometries=[], autocorrectGeometries=False, hasLighting=False):
-
-        self.geometries = geometries
+    def __init__(self, geometries=None, autocorrectGeometries=False, hasLighting=False):
+        self.geometries = geometries if geometries is not None else []
         self.autocorrectGeometries = autocorrectGeometries
         self.hasLighting = hasLighting
 
@@ -78,32 +79,33 @@ class TerrainTopology(object):
         self.cartesianVertices = []
         self.faces = []
         self.verticesLookup = {}
+        self.verticesUnitVectors = []
 
         if self.geometries:
             self.addGeometries(self.geometries)
 
     def __repr__(self):
-        msg = 'Min height:'
-        msg += '\n%s' % self.minHeight
-        msg += '\nMax height:'
-        msg += '\n%s' % self.maxHeight
-        msg += '\nuVertex length:'
-        msg += '\n%s' % len(self.uVertex)
-        msg += '\nuVertex list:'
-        msg += '\n%s' % self.uVertex
-        msg += '\nvVertex length:'
-        msg += '\n%s' % len(self.vVertex)
-        msg += '\nuVertex list:'
-        msg += '\n%s' % self.vVertex
-        msg += '\nhVertex length:'
-        msg += '\n%s' % len(self.hVertex)
-        msg += '\nhVertex list:'
-        msg += '\n%s' % self.hVertex
-        msg += '\nindexData length:'
-        msg += '\n%s' % len(self.indexData)
-        msg += '\nindexData list:'
-        msg += '\n%s' % self.indexData
-        msg += '\nNumber of triangles: %s' % (len(self.indexData) / 3)
+        msg = "Min height:"
+        msg += "\n%s" % self.minHeight
+        msg += "\nMax height:"
+        msg += "\n%s" % self.maxHeight
+        msg += "\nuVertex length:"
+        msg += "\n%s" % len(self.uVertex)
+        msg += "\nuVertex list:"
+        msg += "\n%s" % self.uVertex
+        msg += "\nvVertex length:"
+        msg += "\n%s" % len(self.vVertex)
+        msg += "\nuVertex list:"
+        msg += "\n%s" % self.vVertex
+        msg += "\nhVertex length:"
+        msg += "\n%s" % len(self.hVertex)
+        msg += "\nhVertex list:"
+        msg += "\n%s" % self.hVertex
+        msg += "\nindexData length:"
+        msg += "\n%s" % len(self.indexData)
+        msg += "\nindexData list:"
+        msg += "\n%s" % self.indexData
+        msg += "\nNumber of triangles: %s" % (len(self.indexData) / 3)
         return msg
 
     def addGeometries(self, geometries):
@@ -150,31 +152,35 @@ class TerrainTopology(object):
         You should normally never use this method directly.
         """
         if not geometry.has_z:
-            raise ValueError('Missing z dimension.')
+            raise MissingDimensionError("Missing z dimension.")
         if not isinstance(geometry, Polygon):
-            raise ValueError('Only polygons are accepted.')
+            raise InvalidGeometryError("Only polygons are accepted.")
         vertices = list(geometry.exterior.coords)
         if len(vertices) != 4 and not self.autocorrectGeometries:
-            raise ValueError('None triangular shape has beeen found.')
-        return vertices[:len(vertices) - 1]
+            raise InvalidGeometryError("None triangular shape has beeen found.")
+        return vertices[: len(vertices) - 1]
 
     def _loadGeometry(self, geometrySpec):
         """
         A private method to convert a (E)WKB or (E)WKT to a Shapely geometry.
         """
-        if type(geometrySpec) is str and geometrySpec.startswith('POLYGON Z'):
+        if type(geometrySpec) is str and geometrySpec.startswith("POLYGON Z"):
             try:
                 geometry = load_wkt(geometrySpec)
+            # pylint: disable=broad-except
             except Exception:
                 geometry = None
         else:
             try:
                 geometry = load_wkb(geometrySpec)
+            # pylint: disable=broad-except
             except Exception:
                 geometry = None
 
         if geometry is None:
-            raise ValueError('Failed to convert WKT or WKB to a Shapely geometry')
+            raise InvalidGeometryError(
+                "Failed to convert WKT or WKB to a Shapely geometry"
+            )
 
         return geometry
 
@@ -185,10 +191,12 @@ class TerrainTopology(object):
         vertices = self._assureCounterClockWise(vertices)
         face = []
         for vertex in vertices:
-            lookupKey = ','.join(
-                ["{:.14f}".format(vertex[0]),
-                 "{:.14f}".format(vertex[1]),
-                 "{:.14f}".format(vertex[2])]
+            lookupKey = ",".join(
+                [
+                    "{:.14f}".format(vertex[0]),
+                    "{:.14f}".format(vertex[1]),
+                    "{:.14f}".format(vertex[2]),
+                ]
             )
             faceIndex = self._lookupVertexIndex(lookupKey)
             if faceIndex is not None:
@@ -200,8 +208,7 @@ class TerrainTopology(object):
                 face.append(faceIndex)
             else:
                 self.vertices.append(vertex)
-                self.cartesianVertices.append(
-                    LLH2ECEF(vertex[0], vertex[1], vertex[2]))
+                self.cartesianVertices.append(LLH2ECEF(vertex[0], vertex[1], vertex[2]))
                 faceIndex = len(self.vertices) - 1
                 self.verticesLookup[lookupKey] = faceIndex
                 face.append(faceIndex)
@@ -212,12 +219,11 @@ class TerrainTopology(object):
         """
         A private method to create the final terrain data structure.
         """
-        self.vertices = np.array(self.vertices, dtype='float')
-        self.cartesianVertices = np.array(self.cartesianVertices, dtype='float')
-        self.faces = np.array(self.faces, dtype='int')
+        self.vertices = np.array(self.vertices, dtype="float")
+        self.cartesianVertices = np.array(self.cartesianVertices, dtype="float")
+        self.faces = np.array(self.faces, dtype="int")
         if self.hasLighting:
-            self.verticesUnitVectors = computeNormals(
-                self.cartesianVertices, self.faces)
+            self.verticesUnitVectors = computeNormals(self.cartesianVertices, self.faces)
         self.verticesLookup = {}
 
     def _lookupVertexIndex(self, lookupKey):
@@ -242,6 +248,7 @@ class TerrainTopology(object):
             return (math.atan2(coord[0] - mlat, coord[1] - mlon) + 2 * math.pi) % (
                 2 * math.pi
             )
+
         vertices = sorted(vertices, key=algo, reverse=True)
         return vertices
 

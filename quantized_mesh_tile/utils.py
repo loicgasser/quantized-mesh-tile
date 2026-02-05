@@ -6,23 +6,27 @@ import math
 from struct import calcsize, pack, unpack
 
 import numpy as np
+from shapely import MultiPoint
+from shapely.ops import triangulate
+
+from quantized_mesh_tile.exceptions import InvalidGeometryError
 
 from . import cartesian3d as c3d
 
 EPSILON6 = 0.000001
 
 
-def packEntry(type, value):
-    return pack('<%s' % type, value)
+def packEntry(_type, value):
+    return pack("<%s" % _type, value)
 
 
 def unpackEntry(f, entry):
-    return unpack('<%s' % entry, f.read(calcsize(entry)))[0]
+    return unpack("<%s" % entry, f.read(calcsize(entry)))[0]
 
 
-def packIndices(f, type, indices):
+def packIndices(f, _type, indices):
     for i in indices:
-        f.write(packEntry(type, i))
+        f.write(packEntry(_type, i))
 
 
 def decodeIndices(indices):
@@ -59,7 +63,7 @@ def zigZagEncode(n):
 
 
 def zigZagDecode(z):
-    """ Reverses ZigZag encoding """
+    """Reverses ZigZag encoding"""
     return (z >> 1) ^ (-(z & 1))
 
 
@@ -84,7 +88,7 @@ def fromSnorm(v):
 # https://github.com/AnalyticalGraphicsInc/cesium/blob/b161b6429b9201c99e5fb6f6e6283f3e8328b323/Source/Core/AttributeCompression.js#L43
 def octEncode(vec):
     if abs(c3d.magnitudeSquared(vec) - 1.0) > EPSILON6:
-        raise ValueError('Only normalized vectors are supported')
+        raise InvalidGeometryError("Only normalized vectors are supported")
     res = [0.0, 0.0]
     l1Norm = float(abs(vec[0]) + abs(vec[1]) + abs(vec[2]))
     res[0] = vec[0] / l1Norm
@@ -103,7 +107,9 @@ def octEncode(vec):
 
 def octDecode(x, y):
     if x < 0 or x > 255 or y < 0 or y > 255:
-        raise ValueError('x and y must be signed and normalized between 0 and 255')
+        raise InvalidGeometryError(
+            "x and y must be signed and normalized between 0 and 255"
+        )
     res = [x, y, 0.0]
     res[0] = fromSnorm(x)
     res[1] = fromSnorm(y)
@@ -117,9 +123,11 @@ def octDecode(x, y):
 
 
 def centroid(a, b, c):
-    return [sum((a[0], b[0], c[0])) / 3,
-            sum((a[1], b[1], c[1])) / 3,
-            sum([a[2], b[2], c[2]]) / 3]
+    return [
+        sum((a[0], b[0], c[0])) / 3,
+        sum((a[1], b[1], c[1])) / 3,
+        sum([a[2], b[2], c[2]]) / 3,
+    ]
 
 
 # Based on the vectors defining the plan
@@ -167,7 +175,7 @@ def computeNormals(vertices, faces):
 
 def gzipFileObject(data):
     compressed = io.BytesIO()
-    gz = gzip.GzipFile(fileobj=compressed, mode='wb', compresslevel=5)
+    gz = gzip.GzipFile(fileobj=compressed, mode="wb", compresslevel=5)
     gz.write(data.getvalue())
     gz.close()
     compressed.seek(0)
@@ -180,39 +188,55 @@ def ungzipFileObject(data):
     return f
 
 
-def getCoordsIndex(n, i):
-    return i + 1 if n - 1 != i else 0
-
-
-# Creates all the potential pairs of coords
-def createCoordsPairs(c):
-    coordsPairs = []
-    for i in range(0, len(c)):
-        coordsPairs.append([c[i], c[(i + 2) % len(c)]])
-    return coordsPairs
-
-
-def squaredDistances(coordsPairs):
-    sDistances = []
-    for coordsPair in coordsPairs:
-        sDistances.append(c3d.distanceSquared(coordsPair[0], coordsPair[1]))
-    return sDistances
-
-
 def collapseIntoTriangles(coords):
-    triangles = []
-    while len(coords) > 3:
-        # Create all possible pairs of coordinates
-        coordsPairs = createCoordsPairs(coords)
-        sDistances = squaredDistances(coordsPairs)
-        index = sDistances.index(min(sDistances))
-        i = getCoordsIndex(len(coords), index)
-        triangle = coordsPairs[index] + [coords[i]]
-        triangles.append(triangle)
+    """
+    Triangulate a polygon with more than 3 vertices into triangles.
 
-        # Remove the converging point
-        # As this point is not available to create a new triangle anymore
-        convergingPoint = coords.index(coords[i])
-        coords.pop(convergingPoint)
-    triangles.append(coords)
+    Uses Shapely's Delaunay triangulation which guarantees non-overlapping
+    triangles. The z-coordinates (heights) are preserved from the input.
+
+    Args:
+        coords: List of 3D coordinates [(x, y, z), ...]
+
+    Returns:
+        List of triangles, where each triangle is a list of 3 coordinates.
+
+    Raises:
+        InvalidGeometryError: If duplicate (x, y) coordinates are found.
+    """
+    if len(coords) <= 3:
+        return [coords]
+
+    # Build a mapping from 2D coords to 3D coords (to preserve z values)
+    coord_map = {}
+    for c in coords:
+        key = (float(c[0]), float(c[1]))
+        if key in coord_map:
+            raise InvalidGeometryError(
+                f"Duplicate (x, y) coordinates found: {key}. "
+                "Terrain cannot have multiple heights at the same position."
+            )
+        coord_map[key] = c
+
+    # Create 2D points for triangulation
+    points = MultiPoint([(c[0], c[1]) for c in coords])
+
+    # Perform Delaunay triangulation
+    delaunay_triangles = triangulate(points)
+
+    # Convert back to 3D coordinates
+    triangles = []
+    for tri in delaunay_triangles:
+        triangle_coords = []
+        for pt in tri.exterior.coords[:-1]:  # Exclude closing point
+            key = (float(pt[0]), float(pt[1]))
+            if key in coord_map:
+                triangle_coords.append(coord_map[key])
+            else:
+                # This shouldn't happen with Delaunay, but handle gracefully
+                raise InvalidGeometryError(
+                    f"Triangulation produced unexpected point: {pt}"
+                )
+        triangles.append(triangle_coords)
+
     return triangles

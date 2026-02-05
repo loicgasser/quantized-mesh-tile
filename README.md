@@ -8,3 +8,17 @@ quantized-mesh-tile
 [Quantized-mesh-tile](https://github.com/AnalyticalGraphicsInc/quantized-mesh) is a Python encoder/decoder and topology builder for terrain tiles.
 
 Doc is hosted on Readthedocs: https://quantized-mesh-tile.readthedocs.io/en/latest/
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## Test Doc Locally
+
+```bash
+cd doc
+rm -rf build && make htm
+python -m http.server 8000 --directory build/html
+```
+
+Open `http://localhost:8000/viewer.html`.

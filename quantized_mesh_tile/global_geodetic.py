@@ -1,4 +1,4 @@
-""" This module defines the :class:`quantized_mesh_tile.global_geodetic.GlobalGeodetic`.
+"""This module defines the :class:`quantized_mesh_tile.global_geodetic.GlobalGeodetic`.
 Initial code from:
 https://svn.osgeo.org/gdal/trunk/gdal/swig/python/scripts/gdal2tiles.py
 Functions necessary for generation of global tiles in Plate Carre projection,
@@ -15,6 +15,7 @@ TMS has coordinate origin (for pixels and tiles) in bottom-left corner.
 Reference
 ---------
 """
+
 import math
 
 MAXZOOMLEVEL = 32
@@ -52,7 +53,7 @@ class GlobalGeodetic(object):
     def LonLatToPixels(self, lon, lat, zoom):
         "Converts lon/lat to pixel coordinates in given zoom of the EPSG:4326 pyramid"
 
-        res = self.resFact / 2 ** zoom
+        res = self.resFact / 2**zoom
         px = (180 + lon) / res
         py = (90 + lat) / res
         return px, py
@@ -73,7 +74,7 @@ class GlobalGeodetic(object):
     def Resolution(self, zoom):
         "Resolution (arc/pixel) for given zoom level (measured at Equator)"
 
-        return self.resFact / 2 ** zoom
+        return self.resFact / 2**zoom
         # return 180 / float( 1 << (8+zoom) )
 
     def ZoomForPixelSize(self, pixelSize):
@@ -88,12 +89,12 @@ class GlobalGeodetic(object):
 
     def TileBounds(self, tx, ty, zoom):
         "Returns bounds of the given tile"
-        res = self.resFact / 2 ** zoom
+        res = self.resFact / 2**zoom
         return (
             tx * self.tileSize * res - 180,
             ty * self.tileSize * res - 90,
             (tx + 1) * self.tileSize * res - 180,
-            (ty + 1) * self.tileSize * res - 90
+            (ty + 1) * self.tileSize * res - 90,
         )
 
     def TileLatLonBounds(self, tx, ty, zoom):
