@@ -745,50 +745,29 @@ class TerrainTile(object):
             self._south = topology.minLat
             self._north = topology.maxLat
 
+        cartVerts = topology.cartesianVertices
         bSphere = BoundingSphere()
-        bSphere.fromPoints(topology.cartesianVertices)
+        bSphere.fromPoints(cartVerts)
 
-        ecefMinX = topology.ecefMinX
-        ecefMinY = topology.ecefMinY
-        ecefMinZ = topology.ecefMinZ
-        ecefMaxX = topology.ecefMaxX
-        ecefMaxY = topology.ecefMaxY
-        ecefMaxZ = topology.ecefMaxZ
+        # Compute ECEF bounds using numpy
+        ecef_min = np.min(cartVerts, axis=0)
+        ecef_max = np.max(cartVerts, axis=0)
 
-        # Center of the bounding box 3d
-        centerCoords = [
-            ecefMinX + (ecefMaxX - ecefMinX) * 0.5,
-            ecefMinY + (ecefMaxY - ecefMinY) * 0.5,
-            ecefMinZ + (ecefMaxZ - ecefMinZ) * 0.5,
-        ]
+        occlusionPCoords = occ.fromPoints(cartVerts, bSphere)
 
-        occlusionPCoords = occ.fromPoints(topology.cartesianVertices, bSphere)
-
-        for k in TerrainTile.quantizedMeshHeader.keys():
-            if k == "centerX":
-                self.header[k] = centerCoords[0]
-            elif k == "centerY":
-                self.header[k] = centerCoords[1]
-            elif k == "centerZ":
-                self.header[k] = centerCoords[2]
-            elif k == "minimumHeight":
-                self.header[k] = topology.minHeight
-            elif k == "maximumHeight":
-                self.header[k] = topology.maxHeight
-            elif k == "boundingSphereCenterX":
-                self.header[k] = bSphere.center[0]
-            elif k == "boundingSphereCenterY":
-                self.header[k] = bSphere.center[1]
-            elif k == "boundingSphereCenterZ":
-                self.header[k] = bSphere.center[2]
-            elif k == "boundingSphereRadius":
-                self.header[k] = bSphere.radius
-            elif k == "horizonOcclusionPointX":
-                self.header[k] = occlusionPCoords[0]
-            elif k == "horizonOcclusionPointY":
-                self.header[k] = occlusionPCoords[1]
-            elif k == "horizonOcclusionPointZ":
-                self.header[k] = occlusionPCoords[2]
+        h = self.header
+        h["centerX"] = float((ecef_min[0] + ecef_max[0]) * 0.5)
+        h["centerY"] = float((ecef_min[1] + ecef_max[1]) * 0.5)
+        h["centerZ"] = float((ecef_min[2] + ecef_max[2]) * 0.5)
+        h["minimumHeight"] = topology.minHeight
+        h["maximumHeight"] = topology.maxHeight
+        h["boundingSphereCenterX"] = bSphere.center[0]
+        h["boundingSphereCenterY"] = bSphere.center[1]
+        h["boundingSphereCenterZ"] = bSphere.center[2]
+        h["boundingSphereRadius"] = bSphere.radius
+        h["horizonOcclusionPointX"] = occlusionPCoords[0]
+        h["horizonOcclusionPointY"] = occlusionPCoords[1]
+        h["horizonOcclusionPointZ"] = occlusionPCoords[2]
 
         # High watermark encoding performed during toFile
         # Vectorized quantization using numpy
