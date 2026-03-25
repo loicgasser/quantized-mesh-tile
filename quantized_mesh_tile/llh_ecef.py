@@ -18,16 +18,24 @@ wgs84_a2 = wgs84_a**2  # To speed things up a bit
 wgs84_b2 = wgs84_b**2
 
 
+_DEG2RAD = math.pi / 180.0
+_sin = math.sin
+_cos = math.cos
+_sqrt = math.sqrt
+
+
 def LLH2ECEF(lon, lat, alt):
-    lat *= math.pi / 180.0
-    lon *= math.pi / 180.0
+    lat_r = lat * _DEG2RAD
+    lon_r = lon * _DEG2RAD
 
-    def n(x):
-        return wgs84_a / math.sqrt(1 - wgs84_e2 * (math.sin(x) ** 2))
+    sin_lat = _sin(lat_r)
+    cos_lat = _cos(lat_r)
+    n_val = wgs84_a / _sqrt(1.0 - wgs84_e2 * sin_lat * sin_lat)
 
-    x = (n(lat) + alt) * math.cos(lat) * math.cos(lon)
-    y = (n(lat) + alt) * math.cos(lat) * math.sin(lon)
-    z = (n(lat) * (1 - wgs84_e2) + alt) * math.sin(lat)
+    nalt = n_val + alt
+    x = nalt * cos_lat * _cos(lon_r)
+    y = nalt * cos_lat * _sin(lon_r)
+    z = (n_val * (1.0 - wgs84_e2) + alt) * sin_lat
 
     return [x, y, z]
 
