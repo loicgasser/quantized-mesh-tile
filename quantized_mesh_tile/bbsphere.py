@@ -51,68 +51,74 @@ class BoundingSphere(object):
             if point[2] > self.maxPointZ[2]:
                 self.maxPointZ = point
 
-        # Squared distance between each component min and max
-        xSpan = c3d.magnitudeSquared(c3d.subtract(self.maxPointX, self.minPointX))
-        ySpan = c3d.magnitudeSquared(c3d.subtract(self.maxPointY, self.minPointY))
-        zSpan = c3d.magnitudeSquared(c3d.subtract(self.maxPointZ, self.minPointZ))
+        _sqrt = math.sqrt
+        mnX = self.minPointX
+        mnY = self.minPointY
+        mnZ = self.minPointZ
+        mxX = self.maxPointX
+        mxY = self.maxPointY
+        mxZ = self.maxPointZ
 
-        diameter1 = self.minPointX
-        diameter2 = self.maxPointX
+        # Inline magnitudeSquared(subtract(...))
+        dx = mxX[0]-mnX[0]; dy = mxX[1]-mnX[1]; dz = mxX[2]-mnX[2]
+        xSpan = dx*dx + dy*dy + dz*dz
+        dx = mxY[0]-mnY[0]; dy = mxY[1]-mnY[1]; dz = mxY[2]-mnY[2]
+        ySpan = dx*dx + dy*dy + dz*dz
+        dx = mxZ[0]-mnZ[0]; dy = mxZ[1]-mnZ[1]; dz = mxZ[2]-mnZ[2]
+        zSpan = dx*dx + dy*dy + dz*dz
+
+        diameter1 = mnX
+        diameter2 = mxX
         maxSpan = xSpan
         if ySpan > maxSpan:
             maxSpan = ySpan
-            diameter1 = self.minPointY
-            diameter2 = self.maxPointY
+            diameter1 = mnY
+            diameter2 = mxY
         if zSpan > maxSpan:
-            maxSpan = zSpan
-            diameter1 = self.minPointZ
-            diameter2 = self.maxPointZ
+            diameter1 = mnZ
+            diameter2 = mxZ
 
-        ritterCenter = [
-            (diameter1[0] + diameter2[0]) * 0.5,
-            (diameter1[1] + diameter2[1]) * 0.5,
-            (diameter1[2] + diameter2[2]) * 0.5,
-        ]
+        rc0 = (diameter1[0] + diameter2[0]) * 0.5
+        rc1 = (diameter1[1] + diameter2[1]) * 0.5
+        rc2 = (diameter1[2] + diameter2[2]) * 0.5
 
-        radiusSquared = c3d.magnitudeSquared(c3d.subtract(diameter2, ritterCenter))
-        ritterRadius = math.sqrt(radiusSquared)
+        dx = diameter2[0]-rc0; dy = diameter2[1]-rc1; dz = diameter2[2]-rc2
+        radiusSquared = dx*dx + dy*dy + dz*dz
+        ritterRadius = _sqrt(radiusSquared)
 
-        # Initial center and radius (naive) get min and max box
-        minBoxPt = [self.minPointX[0], self.minPointY[1], self.minPointZ[2]]
-        maxBoxPt = [self.maxPointX[0], self.maxPointY[1], self.maxPointZ[2]]
-        naiveCenter = c3d.multiplyByScalar(c3d.add(minBoxPt, maxBoxPt), 0.5)
+        # Naive center
+        nc0 = (mnX[0] + mxX[0]) * 0.5
+        nc1 = (mnY[1] + mxY[1]) * 0.5
+        nc2 = (mnZ[2] + mxZ[2]) * 0.5
         naiveRadius = 0.0
 
-        for i in range(0, nbPositions):
-            currentP = points[i]
+        for i in range(nbPositions):
+            p = points[i]
+            p0 = p[0]; p1 = p[1]; p2 = p[2]
 
-            # Find the furthest point from the naive center to calculate the naive radius.
-            r = c3d.magnitude(c3d.subtract(currentP, naiveCenter))
+            # Naive radius
+            dx = p0-nc0; dy = p1-nc1; dz = p2-nc2
+            r = _sqrt(dx*dx + dy*dy + dz*dz)
             if r > naiveRadius:
                 naiveRadius = r
 
-            # Make adjustments to the Ritter Sphere to include all points.
-            oldCenterToPointSquared = c3d.magnitudeSquared(
-                c3d.subtract(currentP, ritterCenter)
-            )
-            if oldCenterToPointSquared > radiusSquared:
-                oldCenterToPoint = math.sqrt(oldCenterToPointSquared)
-                ritterRadius = (ritterRadius + oldCenterToPoint) * 0.5
-                # Calculate center of new Ritter sphere
-                oldToNew = oldCenterToPoint - ritterRadius
-                ritterCenter = [
-                    (ritterRadius * ritterCenter[0] + oldToNew * currentP[0])
-                    / oldCenterToPoint,
-                    (ritterRadius * ritterCenter[1] + oldToNew * currentP[1])
-                    / oldCenterToPoint,
-                    (ritterRadius * ritterCenter[2] + oldToNew * currentP[2])
-                    / oldCenterToPoint,
-                ]
+            # Ritter expansion
+            dx = p0-rc0; dy = p1-rc1; dz = p2-rc2
+            octs = dx*dx + dy*dy + dz*dz
+            if octs > radiusSquared:
+                oct = _sqrt(octs)
+                ritterRadius = (ritterRadius + oct) * 0.5
+                radiusSquared = ritterRadius * ritterRadius
+                otn = oct - ritterRadius
+                inv = 1.0 / oct
+                rc0 = (ritterRadius * rc0 + otn * p0) * inv
+                rc1 = (ritterRadius * rc1 + otn * p1) * inv
+                rc2 = (ritterRadius * rc2 + otn * p2) * inv
 
         # Keep the naive sphere if smaller
         if naiveRadius < ritterRadius:
             self.radius = ritterRadius
-            self.center = ritterCenter
+            self.center = [rc0, rc1, rc2]
         else:
             self.radius = naiveRadius
-            self.center = naiveCenter
+            self.center = [nc0, nc1, nc2]
