@@ -40,11 +40,11 @@ def decodeIndices(indices):
 
 
 def encodeIndices(indices):
-    out = []
+    out = [0] * len(indices)
     highest = 0
-    for i in indices:
-        code = highest - i
-        out.append(code)
+    for idx in range(len(indices)):
+        code = highest - indices[idx]
+        out[idx] = code
         if code == 0:
             highest += 1
     return out
