@@ -599,67 +599,64 @@ class TerrainTile(object):
         """
         A private method to write the terrain tile to a file or file-like object.
         """
-        u_t = TerrainTile.vertexData["uVertexCount"]
-        v_t = TerrainTile.vertexData["vVertexCount"]
-        h_t = TerrainTile.vertexData["heightVertexCount"]
         write = f.write
 
-        # Header
-        for k, v in TerrainTile.quantizedMeshHeader.items():
-            write(packEntry(v, self.header[k]))
+        # Header - batch pack all 12 values at once
+        header_values = [self.header[k] for k in TerrainTile.quantizedMeshHeader]
+        write(struct.pack('<3d2f4d3d', *header_values))
 
         # Delta decoding
         vertexCount = len(self.u)
         # Vertices
-        write(packEntry(TerrainTile.vertexData["vertexCount"], vertexCount))
+        write(struct.pack('<I', vertexCount))
 
         # Pre-compute all deltas using numpy diff
         u_arr = np.array(self.u, dtype=np.int32)
         v_arr = np.array(self.v, dtype=np.int32)
         h_arr = np.array(self.h, dtype=np.int32)
 
-        u_deltas = np.concatenate([[u_arr[0]], np.diff(u_arr)])
-        v_deltas = np.concatenate([[v_arr[0]], np.diff(v_arr)])
-        h_deltas = np.concatenate([[h_arr[0]], np.diff(h_arr)])
+        u_deltas = np.empty(len(u_arr), dtype=np.int32)
+        v_deltas = np.empty(len(v_arr), dtype=np.int32)
+        h_deltas = np.empty(len(h_arr), dtype=np.int32)
+        u_deltas[0] = u_arr[0]
+        v_deltas[0] = v_arr[0]
+        h_deltas[0] = h_arr[0]
+        if len(u_arr) > 1:
+            u_deltas[1:] = np.diff(u_arr)
+            v_deltas[1:] = np.diff(v_arr)
+            h_deltas[1:] = np.diff(h_arr)
 
-        # U
-        for ud in u_deltas:
-            write(packEntry(u_t, zigZagEncode(int(ud))))
-        # V
-        for vd in v_deltas:
-            write(packEntry(v_t, zigZagEncode(int(vd))))
-        # H
-        for hd in h_deltas:
-            write(packEntry(h_t, zigZagEncode(int(hd))))
+        # Vectorized zigzag encode: (n << 1) ^ (n >> 31)
+        u_encoded = ((u_deltas << 1) ^ (u_deltas >> 31)).astype(np.uint16)
+        v_encoded = ((v_deltas << 1) ^ (v_deltas >> 31)).astype(np.uint16)
+        h_encoded = ((h_deltas << 1) ^ (h_deltas >> 31)).astype(np.uint16)
+
+        # Batch write all vertex data
+        write(u_encoded.tobytes())
+        write(v_encoded.tobytes())
+        write(h_encoded.tobytes())
 
         # Indices
-        meta = TerrainTile.indexData16
-        if vertexCount > TerrainTile.BYTESPLIT:
-            meta = TerrainTile.indexData32
+        idx_type = 'H' if vertexCount <= TerrainTile.BYTESPLIT else 'I'
+        idx_dtype = np.uint16 if vertexCount <= TerrainTile.BYTESPLIT else np.uint32
 
-        write(packEntry(meta["triangleCount"], len(self.indices) // 3))
+        write(struct.pack('<I', len(self.indices) // 3))
         ind = encodeIndices(self.indices)
-        packIndices(f, meta["indices"], ind)
+        ind_arr = np.array(ind, dtype=idx_dtype)
+        write(ind_arr.tobytes())
 
-        meta = TerrainTile.EdgeIndices16
-        if vertexCount > TerrainTile.BYTESPLIT:
-            meta = TerrainTile.EdgeIndices32
+        # Edge indices - batch pack each edge
+        edge_fmt = '<I' + ('%d%s' % (len(self.westI), idx_type))
+        write(struct.pack(edge_fmt, len(self.westI), *self.westI))
 
-        write(packEntry(meta["westVertexCount"], len(self.westI)))
-        for wi in self.westI:
-            write(packEntry(meta["westIndices"], wi))
+        edge_fmt = '<I' + ('%d%s' % (len(self.southI), idx_type))
+        write(struct.pack(edge_fmt, len(self.southI), *self.southI))
 
-        write(packEntry(meta["southVertexCount"], len(self.southI)))
-        for si in self.southI:
-            write(packEntry(meta["southIndices"], si))
+        edge_fmt = '<I' + ('%d%s' % (len(self.eastI), idx_type))
+        write(struct.pack(edge_fmt, len(self.eastI), *self.eastI))
 
-        write(packEntry(meta["eastVertexCount"], len(self.eastI)))
-        for ei in self.eastI:
-            write(packEntry(meta["eastIndices"], ei))
-
-        write(packEntry(meta["northVertexCount"], len(self.northI)))
-        for ni in self.northI:
-            write(packEntry(meta["northIndices"], ni))
+        edge_fmt = '<I' + ('%d%s' % (len(self.northI), idx_type))
+        write(struct.pack(edge_fmt, len(self.northI), *self.northI))
 
         # Extension header for light
         if len(self.vLight) > 0:
