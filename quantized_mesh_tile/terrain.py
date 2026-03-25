@@ -342,72 +342,76 @@ class TerrainTile(object):
         # pylint: disable=attribute-defined-outside-init
         self.hasLighting = hasLighting
         self.hasWatermask = hasWatermask
-        # Header
-        for k, v in TerrainTile.quantizedMeshHeader.items():
-            self.header[k] = unpackEntry(f, v)
+
+        # Header - batch read all 12 values: 3d 2f 4d 3d = 88 bytes
+        header_data = f.read(88)
+        header_values = struct.unpack('<3d2f4d3d', header_data)
+        for i, k in enumerate(TerrainTile.quantizedMeshHeader):
+            self.header[k] = header_values[i]
 
         # Vertices
-        vertexCount = unpackEntry(f, TerrainTile.vertexData["vertexCount"])
-        uc = TerrainTile.vertexData["uVertexCount"]
-        vc = TerrainTile.vertexData["vVertexCount"]
-        hc = TerrainTile.vertexData["heightVertexCount"]
+        vertexCount = struct.unpack('<I', f.read(4))[0]
 
-        self.u = list(self._iterUnpackAndDecodeVertices(f, vertexCount, uc))
-        self.v = list(self._iterUnpackAndDecodeVertices(f, vertexCount, vc))
-        self.h = list(self._iterUnpackAndDecodeVertices(f, vertexCount, hc))
+        # Bulk read vertex arrays
+        is16bit = vertexCount <= TerrainTile.BYTESPLIT
+        v_dtype = np.uint16 if is16bit else np.uint32
+        v_bytes = vertexCount * (2 if is16bit else 4)
 
-        # Indices
-        meta = TerrainTile.indexData16
-        if vertexCount > TerrainTile.BYTESPLIT:
-            meta = TerrainTile.indexData32
+        u_raw = np.frombuffer(f.read(v_bytes), dtype=v_dtype).astype(np.int32)
+        v_raw = np.frombuffer(f.read(v_bytes), dtype=v_dtype).astype(np.int32)
+        h_raw = np.frombuffer(f.read(v_bytes), dtype=v_dtype).astype(np.int32)
 
-        triangleCount = unpackEntry(f, meta["triangleCount"])
-        ind = list(self._iterUnpackIndices(f, triangleCount * 3, meta["indices"]))
-        self.indices = decodeIndices(ind)
+        # Vectorized zigzag decode: (z >> 1) ^ (-(z & 1))
+        u_decoded = (u_raw >> 1) ^ (-(u_raw & 1))
+        v_decoded = (v_raw >> 1) ^ (-(v_raw & 1))
+        h_decoded = (h_raw >> 1) ^ (-(h_raw & 1))
 
-        meta = TerrainTile.EdgeIndices16
-        if vertexCount > TerrainTile.BYTESPLIT:
-            meta = TerrainTile.EdgeIndices32
+        # Delta decode via cumulative sum
+        self.u = np.cumsum(u_decoded).tolist()
+        self.v = np.cumsum(v_decoded).tolist()
+        self.h = np.cumsum(h_decoded).tolist()
 
-        # Edges (vertices on the edge of the tile)
-        westIndicesCount = unpackEntry(f, meta["westVertexCount"])
-        self.westI = list(
-            self._iterUnpackIndices(f, westIndicesCount, meta["westIndices"])
-        )
-        southIndicesCount = unpackEntry(f, meta["southVertexCount"])
-        self.southI = list(
-            self._iterUnpackIndices(f, southIndicesCount, meta["southIndices"])
-        )
-        eastIndicesCount = unpackEntry(f, meta["eastVertexCount"])
-        self.eastI = list(
-            self._iterUnpackIndices(f, eastIndicesCount, meta["eastIndices"])
-        )
-        northIndicesCount = unpackEntry(f, meta["northVertexCount"])
-        self.northI = list(
-            self._iterUnpackIndices(f, northIndicesCount, meta["northIndices"])
-        )
+        # Indices - bulk read
+        idx_type = 'H' if is16bit else 'I'
+        idx_dtype = np.uint16 if is16bit else np.uint32
+        idx_bytes = 2 if is16bit else 4
+
+        triangleCount = struct.unpack('<I', f.read(4))[0]
+        n_indices = triangleCount * 3
+        ind_raw = np.frombuffer(f.read(n_indices * idx_bytes), dtype=idx_dtype)
+        self.indices = decodeIndices(ind_raw.tolist())
+
+        # Edges - bulk read each edge
+        def _readEdge():
+            count = struct.unpack('<I', f.read(4))[0]
+            if count == 0:
+                return []
+            data = f.read(count * idx_bytes)
+            return list(struct.unpack(f'<{count}{idx_type}', data))
+
+        self.westI = _readEdge()
+        self.southI = _readEdge()
+        self.eastI = _readEdge()
+        self.northI = _readEdge()
 
         if self.hasLighting:
-            # One byte of padding
             # Light extension header
-            meta = TerrainTile.ExtensionHeader
-            extensionId = unpackEntry(f, meta["extensionId"])
+            extensionId, extensionLength = struct.unpack('<BI', f.read(5))
             if extensionId == 1:
-                extensionLength = unpackEntry(f, meta["extensionLength"])
-                octNorms = TerrainTile.OctEncodedVertexNormals["xy"]
-                self.vLight = list(
-                    self._iterUnpackAndDecodeLight(f, extensionLength, octNorms)
-                )
+                light_data = np.frombuffer(f.read(extensionLength), dtype=np.uint8)
+                self.vLight = [
+                    octDecode(int(light_data[i * 2]), int(light_data[i * 2 + 1]))
+                    for i in range(extensionLength // 2)
+                ]
 
         if self.hasWatermask:
-            meta = TerrainTile.ExtensionHeader
-            extensionId = unpackEntry(f, meta["extensionId"])
+            extensionId, extensionLength = struct.unpack('<BI', f.read(5))
             if extensionId == 2:
-                extensionLength = unpackEntry(f, meta["extensionLength"])
-                maskXY = TerrainTile.WaterMask["xy"]
-                self.watermask = list(
-                    self._iterUnpackWatermaskRow(f, extensionLength, maskXY)
-                )
+                mask_data = np.frombuffer(f.read(extensionLength), dtype=np.uint8)
+                if extensionLength > 1:
+                    self.watermask = mask_data.reshape(256, 256).tolist()
+                else:
+                    self.watermask = [mask_data.tolist()]
 
         # Check for unsupported extensions and skip them with a warning
         self._skipUnsupportedExtensions(f)
