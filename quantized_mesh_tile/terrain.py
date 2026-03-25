@@ -666,47 +666,41 @@ class TerrainTile(object):
         if len(self.vLight) > 0:
             # pylint: disable=attribute-defined-outside-init
             self.hasLighting = True
-            meta = TerrainTile.ExtensionHeader
-            # Extension header ID is 1 for lightening
-            write(packEntry(meta["extensionId"], 1))
-            # Unsigned char size len is 1
-            write(packEntry(meta["extensionLength"], 2 * vertexCount))
-
-            metaV = TerrainTile.OctEncodedVertexNormals
-            for i in range(0, vertexCount):
+            # Extension ID=1, length=2*vertexCount
+            write(struct.pack('<BI', 1, 2 * vertexCount))
+            # Batch oct-encode all normals and write at once
+            light_bytes = bytearray(2 * vertexCount)
+            for i in range(vertexCount):
                 x, y = octEncode(self.vLight[i])
-                write(packEntry(metaV["xy"], x))
-                write(packEntry(metaV["xy"], y))
+                light_bytes[i * 2] = x
+                light_bytes[i * 2 + 1] = y
+            write(bytes(light_bytes))
 
         if self.watermask:
             self.hasWatermask = True
-            # Extension header ID is 2 for watermark
-            meta = TerrainTile.ExtensionHeader
-            write(packEntry(meta["extensionId"], 2))
-            # Extension header meta
             nbRows = len(self.watermask)
             if nbRows > 1:
-                # Unsigned char size len is 1
-                write(packEntry(meta["extensionLength"], TILEPXS))
+                write(struct.pack('<BI', 2, TILEPXS))
                 if nbRows != 256:
                     raise TerrainTileError(
                         "Unexpected number of rows for the watermask: %s" % nbRows
                     )
-                # From North to South
-                for i in range(0, nbRows):
-                    x = self.watermask[i]
-                    if len(x) != 256:
+                mask_bytes = bytearray(TILEPXS)
+                offset = 0
+                for i in range(nbRows):
+                    row = self.watermask[i]
+                    if len(row) != 256:
                         raise TerrainTileError(
-                            "Unexpected number of columns for the watermask: %s" % len(x)
+                            "Unexpected number of columns for the watermask: %s" % len(row)
                         )
-                    # From West to East
-                    for y in x:
-                        write(packEntry(TerrainTile.WaterMask["xy"], int(y)))
+                    for y in row:
+                        mask_bytes[offset] = int(y)
+                        offset += 1
+                write(bytes(mask_bytes))
             else:
-                write(packEntry(meta["extensionLength"], 1))
-                if self.watermask[0][0] is None:
-                    self.watermask[0][0] = 0
-                write(packEntry(TerrainTile.WaterMask["xy"], int(self.watermask[0][0])))
+                write(struct.pack('<BI', 2, 1))
+                val = self.watermask[0][0]
+                write(struct.pack('<B', int(val) if val is not None else 0))
 
     def fromTerrainTopology(self, topology, bounds=None):
         """
