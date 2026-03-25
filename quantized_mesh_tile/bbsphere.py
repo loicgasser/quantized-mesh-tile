@@ -118,11 +118,11 @@ class BoundingSphere(object):
             dz = p2-rc2
             octs = dx*dx + dy*dy + dz*dz
             if octs > radiusSquared:
-                oct = _sqrt(octs)
-                ritterRadius = (ritterRadius + oct) * 0.5
+                dist = _sqrt(octs)
+                ritterRadius = (ritterRadius + dist) * 0.5
                 radiusSquared = ritterRadius * ritterRadius
-                otn = oct - ritterRadius
-                inv = 1.0 / oct
+                otn = dist - ritterRadius
+                inv = 1.0 / dist
                 rc0 = (ritterRadius * rc0 + otn * p0) * inv
                 rc1 = (ritterRadius * rc1 + otn * p1) * inv
                 rc2 = (ritterRadius * rc2 + otn * p2) * inv
