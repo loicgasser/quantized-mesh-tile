@@ -26,12 +26,8 @@ from .utils import (
     gzipFileObject,
     octDecode,
     octEncode,
-    packEntry,
-    packIndices,
     ungzipFileObject,
     unpackEntry,
-    zigZagDecode,
-    zigZagEncode,
 )
 
 # For a tile of 256px * 256px
@@ -449,60 +445,6 @@ class TerrainTile(object):
             except struct.error:
                 # Could not parse as extension header, stop
                 break
-
-    @staticmethod
-    def _iterUnpackAndDecodeVertices(f, vertexCount, structType):
-        """
-        A private method to itertatively unpack and decode indices.
-        """
-        i = 0
-        # Delta decoding
-        delta = 0
-        while i != vertexCount:
-            delta += zigZagDecode(unpackEntry(f, structType))
-            yield delta
-            i += 1
-
-    @staticmethod
-    def _iterUnpackIndices(f, indicesCount, structType):
-        """
-        A private method to iteratively unpack indices
-        """
-        i = 0
-        while i != indicesCount:
-            yield unpackEntry(f, structType)
-            i += 1
-
-    @staticmethod
-    def _iterUnpackAndDecodeLight(f, extensionLength, structType):
-        """
-        A private method to iteratively unpack light vector.
-        """
-        i = 0
-        xyCount = extensionLength / 2
-        while i != xyCount:
-            yield octDecode(unpackEntry(f, structType), unpackEntry(f, structType))
-            i += 1
-
-    @staticmethod
-    def _iterUnpackWatermaskRow(f, extensionLength, structType):
-        """
-        A private method to iteratively unpack watermask rows
-        """
-        i = 0
-        xyCount = 0
-        row = []
-        while xyCount != extensionLength:
-            row.append(unpackEntry(f, structType))
-            if i == 255:
-                yield row
-                i = 0
-                row = []
-            else:
-                i += 1
-            xyCount += 1
-        if row:
-            yield row
 
     def fromFile(self, filePath, hasLighting=False, hasWatermask=False, gzipped=False):
         """

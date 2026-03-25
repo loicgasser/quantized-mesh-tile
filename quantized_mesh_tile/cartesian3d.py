@@ -27,10 +27,6 @@ def distance(p1, p2):
     return math.sqrt(distanceSquared(p1, p2))
 
 
-def multiplyByScalar(p, scalar):
-    return [p[0] * scalar, p[1] * scalar, p[2] * scalar]
-
-
 def normalize(p):
     mgn = magnitude(p)
     return [p[0] / mgn, p[1] / mgn, p[2] / mgn]

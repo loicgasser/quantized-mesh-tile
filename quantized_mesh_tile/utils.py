@@ -3,7 +3,7 @@
 import gzip
 import io
 import math
-from struct import calcsize, pack, unpack
+from struct import calcsize, unpack
 
 import numpy as np
 from shapely import MultiPoint
@@ -16,17 +16,8 @@ from . import cartesian3d as c3d
 EPSILON6 = 0.000001
 
 
-def packEntry(_type, value):
-    return pack("<%s" % _type, value)
-
-
 def unpackEntry(f, entry):
     return unpack("<%s" % entry, f.read(calcsize(entry)))[0]
-
-
-def packIndices(f, _type, indices):
-    for i in indices:
-        f.write(packEntry(_type, i))
 
 
 def decodeIndices(indices):
@@ -120,14 +111,6 @@ def octDecode(x, y):
         res[0] = (1.0 - abs(res[1])) * signNotZero(oldX)
         res[1] = (1.0 - abs(oldX)) * signNotZero(res[1])
     return c3d.normalize(res)
-
-
-def centroid(a, b, c):
-    return [
-        sum((a[0], b[0], c[0])) / 3,
-        sum((a[1], b[1], c[1])) / 3,
-        sum([a[2], b[2], c[2]]) / 3,
-    ]
 
 
 # Based on the vectors defining the plan

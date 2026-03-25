@@ -5,8 +5,6 @@ from typing import List
 
 from quantized_mesh_tile.exceptions import TerrainTileError
 
-from . import cartesian3d as c3d
-
 
 class BoundingSphere(object):
     def __init__(self, *_, **kwargs):
@@ -60,11 +58,17 @@ class BoundingSphere(object):
         mxZ = self.maxPointZ
 
         # Inline magnitudeSquared(subtract(...))
-        dx = mxX[0]-mnX[0]; dy = mxX[1]-mnX[1]; dz = mxX[2]-mnX[2]
+        dx = mxX[0]-mnX[0]
+        dy = mxX[1]-mnX[1]
+        dz = mxX[2]-mnX[2]
         xSpan = dx*dx + dy*dy + dz*dz
-        dx = mxY[0]-mnY[0]; dy = mxY[1]-mnY[1]; dz = mxY[2]-mnY[2]
+        dx = mxY[0]-mnY[0]
+        dy = mxY[1]-mnY[1]
+        dz = mxY[2]-mnY[2]
         ySpan = dx*dx + dy*dy + dz*dz
-        dx = mxZ[0]-mnZ[0]; dy = mxZ[1]-mnZ[1]; dz = mxZ[2]-mnZ[2]
+        dx = mxZ[0]-mnZ[0]
+        dy = mxZ[1]-mnZ[1]
+        dz = mxZ[2]-mnZ[2]
         zSpan = dx*dx + dy*dy + dz*dz
 
         diameter1 = mnX
@@ -82,7 +86,9 @@ class BoundingSphere(object):
         rc1 = (diameter1[1] + diameter2[1]) * 0.5
         rc2 = (diameter1[2] + diameter2[2]) * 0.5
 
-        dx = diameter2[0]-rc0; dy = diameter2[1]-rc1; dz = diameter2[2]-rc2
+        dx = diameter2[0]-rc0
+        dy = diameter2[1]-rc1
+        dz = diameter2[2]-rc2
         radiusSquared = dx*dx + dy*dy + dz*dz
         ritterRadius = _sqrt(radiusSquared)
 
@@ -94,16 +100,22 @@ class BoundingSphere(object):
 
         for i in range(nbPositions):
             p = points[i]
-            p0 = p[0]; p1 = p[1]; p2 = p[2]
+            p0 = p[0]
+            p1 = p[1]
+            p2 = p[2]
 
             # Naive radius
-            dx = p0-nc0; dy = p1-nc1; dz = p2-nc2
+            dx = p0-nc0
+            dy = p1-nc1
+            dz = p2-nc2
             r = _sqrt(dx*dx + dy*dy + dz*dz)
             if r > naiveRadius:
                 naiveRadius = r
 
             # Ritter expansion
-            dx = p0-rc0; dy = p1-rc1; dz = p2-rc2
+            dx = p0-rc0
+            dy = p1-rc1
+            dz = p2-rc2
             octs = dx*dx + dy*dy + dz*dz
             if octs > radiusSquared:
                 oct = _sqrt(octs)

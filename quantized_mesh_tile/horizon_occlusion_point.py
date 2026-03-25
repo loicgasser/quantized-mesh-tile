@@ -2,8 +2,6 @@
 
 import math
 
-import numpy as np
-
 from quantized_mesh_tile.exceptions import InvalidGeometryError
 
 from . import llh_ecef as ecef
