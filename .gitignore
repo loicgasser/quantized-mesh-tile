@@ -12,3 +12,6 @@ doc/build/
 .eggs
 .ruff_cache
 .pytest_cache
+.claude
+run.log
+
